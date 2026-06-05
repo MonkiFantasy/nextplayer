@@ -270,10 +270,6 @@ private fun BiliActionRow(
         BiliTextAction(text = "缩放", onClick = onVideoContentScaleLongClick)
         BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_screen_rotation)
         BiliIconAction(onClick = onLockControlsClick, icon = R.drawable.ic_lock_open)
-        if (isPipSupported) {
-            BiliIconAction(onClick = onPictureInPictureClick, icon = R.drawable.ic_pip)
-        }
-        BiliIconAction(onClick = onPlayInBackgroundClick, icon = R.drawable.ic_headset)
     }
 }
 

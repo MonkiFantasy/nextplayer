@@ -259,22 +259,9 @@ fun MediaPlayerScreen(
                 }
 
                 if (controlsVisibilityState.controlsVisible && controlsVisibilityState.controlsLocked) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .safeDrawingPadding()
-                            .padding(top = 24.dp),
-                    ) {
-                        PlayerButton(
-                            containerColor = Color.Black.copy(0.5f),
-                            onClick = { controlsVisibilityState.unlockControls() }
-                        ) {
-                            Icon(
-                                painter = painterResource(coreUiR.drawable.ic_lock),
-                                contentDescription = stringResource(coreUiR.string.controls_unlock),
-                            )
-                        }
-                    }
+                    BiliLockedControls(
+                        onUnlockClick = { controlsVisibilityState.unlockControls() },
+                    )
                 } else {
                     PlayerControlsView(
                         topView = {
@@ -307,6 +294,27 @@ fun MediaPlayerScreen(
                             }
                         },
                         middleView = {
+                            if (controlsVisibilityState.controlsVisible) {
+                                BiliPortraitCornerActions(
+                                    onPictureInPictureClick = if (pictureInPictureState.isPipSupported) {
+                                        {
+                                            if (!pictureInPictureState.hasPipPermission) {
+                                                Toast.makeText(
+                                                    context,
+                                                    coreUiR.string.enable_pip_from_settings,
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
+                                                pictureInPictureState.openPictureInPictureSettings()
+                                            } else {
+                                                pictureInPictureState.enterPictureInPictureMode()
+                                            }
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                    onPlayInBackgroundClick = onPlayInBackgroundClick,
+                                )
+                            }
                             if (controlsVisibilityState.controlsVisible && isPortrait) {
                                 BiliPortraitSideActions(
                                     onSubtitleClick = {
@@ -329,23 +337,6 @@ fun MediaPlayerScreen(
                                         controlsVisibilityState.showControls()
                                         controlsVisibilityState.lockControls()
                                     },
-                                    onPictureInPictureClick = if (pictureInPictureState.isPipSupported) {
-                                        {
-                                            if (!pictureInPictureState.hasPipPermission) {
-                                                Toast.makeText(
-                                                    context,
-                                                    coreUiR.string.enable_pip_from_settings,
-                                                    Toast.LENGTH_SHORT,
-                                                ).show()
-                                                pictureInPictureState.openPictureInPictureSettings()
-                                            } else {
-                                                pictureInPictureState.enterPictureInPictureMode()
-                                            }
-                                        }
-                                    } else {
-                                        null
-                                    },
-                                    onPlayInBackgroundClick = onPlayInBackgroundClick,
                                 )
                             }
                             when {
@@ -551,8 +542,6 @@ fun BoxScope.BiliPortraitSideActions(
     onPlaybackSpeedClick: () -> Unit,
     onVideoScaleClick: () -> Unit,
     onLockControlsClick: () -> Unit,
-    onPictureInPictureClick: (() -> Unit)?,
-    onPlayInBackgroundClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -566,10 +555,92 @@ fun BoxScope.BiliPortraitSideActions(
         BiliPortraitSideAction(label = "倍速", icon = coreUiR.drawable.ic_speed, onClick = onPlaybackSpeedClick)
         BiliPortraitSideAction(label = "缩放", icon = coreUiR.drawable.ic_width_wide, onClick = onVideoScaleClick)
         BiliPortraitSideAction(label = "锁定", icon = coreUiR.drawable.ic_lock_open, onClick = onLockControlsClick)
+    }
+}
+
+@Composable
+fun BoxScope.BiliLockedControls(onUnlockClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .safeDrawingPadding()
+            .padding(horizontal = 18.dp),
+    ) {
+        BiliUnlockButton(
+            modifier = Modifier.align(Alignment.CenterStart),
+            onClick = onUnlockClick,
+        )
+        BiliUnlockButton(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            onClick = onUnlockClick,
+        )
+    }
+}
+
+@Composable
+private fun BiliUnlockButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    PlayerButton(
+        modifier = modifier.size(42.dp),
+        containerColor = Color.Black.copy(0.36f),
+        onClick = onClick,
+    ) {
+        Icon(
+            painter = painterResource(coreUiR.drawable.ic_lock),
+            contentDescription = stringResource(coreUiR.string.controls_unlock),
+            modifier = Modifier.size(24.dp),
+            tint = Color.White,
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.BiliPortraitCornerActions(
+    onPictureInPictureClick: (() -> Unit)?,
+    onPlayInBackgroundClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = 64.dp, end = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         onPictureInPictureClick?.let {
-            BiliPortraitSideAction(label = "PiP", icon = coreUiR.drawable.ic_pip, onClick = it)
+            BiliPortraitSmallAction(label = "小窗", icon = coreUiR.drawable.ic_pip, onClick = it)
         }
-        BiliPortraitSideAction(label = "后台", icon = coreUiR.drawable.ic_headset, onClick = onPlayInBackgroundClick)
+        BiliPortraitSmallAction(label = "后台", icon = coreUiR.drawable.ic_headset, onClick = onPlayInBackgroundClick)
+    }
+}
+
+@Composable
+private fun BiliPortraitSmallAction(
+    label: String,
+    icon: Int,
+    onClick: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
+    ) {
+        PlayerButton(
+            modifier = Modifier.size(34.dp),
+            onClick = onClick,
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = label,
+                modifier = Modifier.size(22.dp),
+                tint = Color.White,
+            )
+        }
+        Text(
+            text = label,
+            color = Color.White,
+            style = MaterialTheme.typography.labelSmall,
+        )
     }
 }
 
