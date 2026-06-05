@@ -4,8 +4,15 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,11 +30,11 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,8 +47,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -60,8 +72,10 @@ import dev.anilbeesetti.nextplayer.feature.player.buttons.NextButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PlayPauseButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PlayerButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PreviousButton
+import dev.anilbeesetti.nextplayer.feature.player.extensions.nameRes
 import dev.anilbeesetti.nextplayer.feature.player.state.ControlsVisibilityState
 import dev.anilbeesetti.nextplayer.feature.player.state.VerticalGesture
+import dev.anilbeesetti.nextplayer.feature.player.state.durationFormatted
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberBrightnessState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberControlsVisibilityState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberErrorState
@@ -74,8 +88,6 @@ import dev.anilbeesetti.nextplayer.feature.player.state.rememberTapGestureState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberVideoZoomAndContentScaleState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberVolumeAndBrightnessGestureState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberVolumeState
-import dev.anilbeesetti.nextplayer.feature.player.extensions.nameRes
-import dev.anilbeesetti.nextplayer.feature.player.state.seekAmountFormatted
 import dev.anilbeesetti.nextplayer.feature.player.state.seekToPositionFormated
 import dev.anilbeesetti.nextplayer.feature.player.ui.DoubleTapIndicator
 import dev.anilbeesetti.nextplayer.feature.player.ui.OverlayShowView
@@ -84,6 +96,7 @@ import dev.anilbeesetti.nextplayer.feature.player.ui.SubtitleConfiguration
 import dev.anilbeesetti.nextplayer.feature.player.ui.VerticalProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsBottomView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsTopView
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.seconds
 
 val LocalControlsVisibilityState = compositionLocalOf<ControlsVisibilityState?> { null }
@@ -147,6 +160,7 @@ fun MediaPlayerScreen(
         screenOrientation = playerPreferences.playerScreenOrientation,
     )
     val errorState = rememberErrorState(player = player)
+    val hapticFeedback = LocalHapticFeedback.current
 
     LaunchedEffect(pictureInPictureState.isInPictureInPictureMode) {
         if (pictureInPictureState.isInPictureInPictureMode) {
@@ -157,6 +171,7 @@ fun MediaPlayerScreen(
     LaunchedEffect(tapGestureState.isLongPressGestureInAction) {
         if (tapGestureState.isLongPressGestureInAction) {
             controlsVisibilityState.hideControls()
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
         }
     }
 
@@ -229,19 +244,9 @@ fun MediaPlayerScreen(
                     enter = fadeIn(),
                     exit = fadeOut(),
                 ) {
-                    Surface(shape = CircleShape) {
-                        Row(
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp,
-                                vertical = 8.dp,
-                            ),
-                        ) {
-                            Text(
-                                text = stringResource(coreUiR.string.fast_playback_speed, tapGestureState.longPressSpeed),
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                        }
-                    }
+                    BiliLongPressSpeedIndicator(
+                        text = stringResource(coreUiR.string.fast_playback_speed, tapGestureState.longPressSpeed),
+                    )
                 }
 
                 if (controlsVisibilityState.controlsVisible && controlsVisibilityState.controlsLocked) {
@@ -293,10 +298,17 @@ fun MediaPlayerScreen(
                         },
                         middleView = {
                             when {
-                                seekGestureState.seekAmount != null -> InfoView(info = "${seekGestureState.seekAmountFormatted}\n[${seekGestureState.seekToPositionFormated}]")
-                                videoZoomAndContentScaleState.isZooming -> InfoView(info = "${(videoZoomAndContentScaleState.zoom * 100).toInt()}%")
-                                videoZoomAndContentScaleState.showContentScaleIndicator -> InfoView(info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()))
-                                controlsVisibilityState.controlsVisible -> ControlsMiddleView(player = player)
+                                seekGestureState.seekAmount != null -> BiliSeekPreview(
+                                    position = seekGestureState.seekToPositionFormated,
+                                    duration = mediaPresentationState.durationFormatted,
+                                )
+                                videoZoomAndContentScaleState.isZooming -> InfoView(
+                                    info = "${(videoZoomAndContentScaleState.zoom * 100).toInt()}%",
+                                )
+                                videoZoomAndContentScaleState.showContentScaleIndicator -> InfoView(
+                                    info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()),
+                                )
+                                controlsVisibilityState.controlsVisible -> Unit
                                 else -> Unit
                             }
                         },
@@ -320,6 +332,18 @@ fun MediaPlayerScreen(
                                     onSeekEnd = seekGestureState::onSeekEnd,
                                     onRotateClick = rotationState::rotate,
                                     onPlayInBackgroundClick = onPlayInBackgroundClick,
+                                    onSubtitleClick = {
+                                        controlsVisibilityState.hideControls()
+                                        overlayView = OverlayView.SUBTITLE_SELECTOR
+                                    },
+                                    onPlaylistClick = {
+                                        controlsVisibilityState.hideControls()
+                                        overlayView = OverlayView.PLAYLIST
+                                    },
+                                    onPlaybackSpeedClick = {
+                                        controlsVisibilityState.hideControls()
+                                        overlayView = OverlayView.PLAYBACK_SPEED
+                                    },
                                     onLockControlsClick = {
                                         controlsVisibilityState.showControls()
                                         controlsVisibilityState.lockControls()
@@ -436,6 +460,102 @@ fun MediaPlayerScreen(
         }
     }
 }
+
+
+@Composable
+fun BiliSeekPreview(
+    modifier: Modifier = Modifier,
+    position: String,
+    duration: String,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 230.dp, height = 128.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.Black.copy(alpha = 0.42f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "预览",
+                color = Color.White.copy(alpha = 0.58f),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+        Text(
+            text = "$position / $duration",
+            color = Color.White,
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        )
+    }
+}
+
+@Composable
+fun BiliLongPressSpeedIndicator(
+    modifier: Modifier = Modifier,
+    text: String,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF4F5865).copy(alpha = 0.78f))
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        BiliAnimatedFastForwardTriangles()
+        Text(
+            text = text,
+            color = Color.White,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun BiliAnimatedFastForwardTriangles(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "bili-fast-forward")
+    val progress = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 960, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "bili-fast-forward-progress",
+    )
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(3) { index ->
+            val phase = ((progress.value * 3f) - index).floorMod(3f)
+            val alpha = (1f - (abs(phase - 1f) / 1f)).coerceIn(0.22f, 1f)
+            Canvas(
+                modifier = Modifier
+                    .size(width = 18.dp, height = 22.dp)
+                    .blur(((1f - alpha) * 3f).dp),
+            ) {
+                val path = Path().apply {
+                    moveTo(0f, 0f)
+                    lineTo(size.width, size.height / 2f)
+                    lineTo(0f, size.height)
+                    close()
+                }
+                drawPath(path = path, color = Color.White.copy(alpha = alpha))
+            }
+        }
+    }
+}
+
+private fun Float.floorMod(other: Float): Float = ((this % other) + other) % other
 
 @Composable
 fun InfoView(
