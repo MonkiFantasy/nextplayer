@@ -19,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -27,11 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -40,6 +41,7 @@ import dev.anilbeesetti.nextplayer.core.common.extensions.round
 import dev.anilbeesetti.nextplayer.core.ui.R
 import dev.anilbeesetti.nextplayer.core.ui.components.NextSwitch
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberPlaybackParametersState
+import kotlin.math.abs
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -84,8 +86,9 @@ fun BoxScope.PlaybackSpeedSelectorView(
                 }
 
                 Text(
-                    text = playbackParametersState.speed.round(2).toString(),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "${playbackParametersState.speed.round(2)}X",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f),
                 )
@@ -130,26 +133,28 @@ fun BoxScope.PlaybackSpeedSelectorView(
                 listOf(
                     0.2f, 0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, 3.5f, 4.0f,
                 ).forEach { speed ->
+                    val selected = abs(playbackParametersState.speed - speed) < 0.05f
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
                             .border(
-                                width = 1.dp,
-                                color = LocalContentColor.current,
+                                width = 1.5.dp,
+                                color = if (selected) Color(0xFFFF6699) else Color.White.copy(alpha = 0.82f),
                                 shape = CircleShape,
                             )
                             .clickable { playbackParametersState.setPlaybackSpeed(speed) }
                             .padding(
                                 horizontal = 8.dp,
-                                vertical = 8.dp,
+                                vertical = 10.dp,
                             )
                             .weight(1f),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = speed.toString(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            text = "${speed}X",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (selected) Color(0xFFFF6699) else Color(0xFFC8D2FF),
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                         )
                     }
                 }

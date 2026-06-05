@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,7 +60,9 @@ fun BoxScope.OverlayView(
         exit = if (configuration.isPortrait) slideOutVertically { it } else slideOutHorizontally { it },
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFF111318).copy(alpha = 0.96f),
+            contentColor = Color.White,
             modifier = modifier
                 .then(
                     if (configuration.isPortrait) {

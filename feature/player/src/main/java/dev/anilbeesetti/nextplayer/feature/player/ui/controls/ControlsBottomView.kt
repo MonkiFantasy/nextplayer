@@ -1,5 +1,6 @@
 package dev.anilbeesetti.nextplayer.feature.player.ui.controls
 
+import android.content.res.Configuration
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,6 +53,7 @@ import dev.anilbeesetti.nextplayer.core.ui.extensions.copy
 import dev.anilbeesetti.nextplayer.feature.player.buttons.NextButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PlayPauseButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PlayerButton
+import dev.anilbeesetti.nextplayer.feature.player.buttons.PreviousButton
 import dev.anilbeesetti.nextplayer.feature.player.extensions.drawableRes
 import dev.anilbeesetti.nextplayer.feature.player.state.MediaPresentationState
 import dev.anilbeesetti.nextplayer.feature.player.state.durationFormatted
@@ -78,107 +82,206 @@ fun ControlsBottomView(
     onSeek: (Long) -> Unit,
     onSeekEnd: () -> Unit,
 ) {
+    val configuration = LocalConfiguration.current
     val systemBarsPadding = WindowInsets.systemBars.union(WindowInsets.displayCutout).asPaddingValues()
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     Column(
         modifier = modifier
             .padding(systemBarsPadding.copy(top = 0.dp))
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 18.dp.takeIf { systemBarsPadding.calculateBottomPadding() == 0.dp } ?: 0.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = if (isPortrait) 18.dp else 24.dp)
+            .padding(bottom = 14.dp.takeIf { systemBarsPadding.calculateBottomPadding() == 0.dp } ?: 0.dp),
+        verticalArrangement = Arrangement.spacedBy(if (isPortrait) 8.dp else 10.dp),
     ) {
-        Text(
-            text = "${mediaPresentationState.positionFormatted}/${mediaPresentationState.durationFormatted}",
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium,
-        )
-
-        BiliPlayerSeekbar(
-            position = mediaPresentationState.position.toFloat(),
-            duration = mediaPresentationState.duration.toFloat(),
-            onSeek = { onSeek(it.toLong()) },
-            onSeekFinished = onSeekEnd,
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            PlayPauseButton(player = player, modifier = Modifier.size(58.dp))
-            NextButton(player = player, modifier = Modifier.size(42.dp))
-            BiliDanmakuButton(text = "弹")
-            BiliDanmakuButton(text = "弹⚙")
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(46.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Color.White.copy(alpha = 0.88f))
-                    .padding(horizontal = 18.dp),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Text(
-                    text = "发个友善的弹幕见证当下",
-                    color = Color.Black.copy(alpha = 0.55f),
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                )
-            }
-
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(24.dp, alignment = controlsAlignment),
-            ) {
-                BiliTextAction(text = "字幕", onClick = onSubtitleClick)
-                BiliTextAction(text = "选集", onClick = onPlaylistClick)
-                BiliTextAction(text = "倍速", onClick = onPlaybackSpeedClick)
-                BiliTextAction(text = "自动", onClick = onPlayInBackgroundClick)
-                PlayerButton(onClick = onLockControlsClick) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_lock_open),
-                        contentDescription = null,
-                    )
-                }
-                PlayerButton(
-                    onClick = onVideoContentScaleClick,
-                    onLongClick = onVideoContentScaleLongClick,
-                ) {
-                    Icon(
-                        painter = painterResource(videoContentScale.drawableRes()),
-                        contentDescription = null,
-                    )
-                }
-                if (isPipSupported) {
-                    PlayerButton(onClick = onPictureInPictureClick) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_pip),
-                            contentDescription = null,
-                        )
-                    }
-                }
-            }
+        if (isPortrait) {
+            BiliPortraitBottomControls(
+                player = player,
+                mediaPresentationState = mediaPresentationState,
+                videoContentScale = videoContentScale,
+                isPipSupported = isPipSupported,
+                onVideoContentScaleClick = onVideoContentScaleClick,
+                onVideoContentScaleLongClick = onVideoContentScaleLongClick,
+                onLockControlsClick = onLockControlsClick,
+                onPictureInPictureClick = onPictureInPictureClick,
+                onRotateClick = onRotateClick,
+                onPlayInBackgroundClick = onPlayInBackgroundClick,
+                onSubtitleClick = onSubtitleClick,
+                onPlaylistClick = onPlaylistClick,
+                onPlaybackSpeedClick = onPlaybackSpeedClick,
+                onSeek = onSeek,
+                onSeekEnd = onSeekEnd,
+            )
+        } else {
+            BiliLandscapeBottomControls(
+                player = player,
+                mediaPresentationState = mediaPresentationState,
+                controlsAlignment = controlsAlignment,
+                videoContentScale = videoContentScale,
+                isPipSupported = isPipSupported,
+                onVideoContentScaleClick = onVideoContentScaleClick,
+                onVideoContentScaleLongClick = onVideoContentScaleLongClick,
+                onLockControlsClick = onLockControlsClick,
+                onPictureInPictureClick = onPictureInPictureClick,
+                onRotateClick = onRotateClick,
+                onPlayInBackgroundClick = onPlayInBackgroundClick,
+                onSubtitleClick = onSubtitleClick,
+                onPlaylistClick = onPlaylistClick,
+                onPlaybackSpeedClick = onPlaybackSpeedClick,
+                onSeek = onSeek,
+                onSeekEnd = onSeekEnd,
+            )
         }
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
-private fun BiliDanmakuButton(text: String) {
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .border(2.dp, Color.White, RoundedCornerShape(10.dp)),
-        contentAlignment = Alignment.Center,
+private fun BiliLandscapeBottomControls(
+    player: Player,
+    mediaPresentationState: MediaPresentationState,
+    controlsAlignment: Alignment.Horizontal,
+    videoContentScale: VideoContentScale,
+    isPipSupported: Boolean,
+    onVideoContentScaleClick: () -> Unit,
+    onVideoContentScaleLongClick: () -> Unit,
+    onLockControlsClick: () -> Unit,
+    onPictureInPictureClick: () -> Unit,
+    onRotateClick: () -> Unit,
+    onPlayInBackgroundClick: () -> Unit,
+    onSubtitleClick: () -> Unit,
+    onPlaylistClick: () -> Unit,
+    onPlaybackSpeedClick: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onSeekEnd: () -> Unit,
+) {
+    Text(
+        text = "${mediaPresentationState.positionFormatted}/${mediaPresentationState.durationFormatted}",
+        color = Color.White,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Medium,
+    )
+    BiliPlayerSeekbar(
+        position = mediaPresentationState.position.toFloat(),
+        duration = mediaPresentationState.duration.toFloat(),
+        onSeek = { onSeek(it.toLong()) },
+        onSeekFinished = onSeekEnd,
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            text = text,
-            color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+        PlayPauseButton(player = player, modifier = Modifier.size(52.dp))
+        PreviousButton(player = player, modifier = Modifier.size(40.dp))
+        NextButton(player = player, modifier = Modifier.size(40.dp))
+        Spacer(modifier = Modifier.weight(1f))
+        BiliActionRow(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            controlsAlignment = controlsAlignment,
+            videoContentScale = videoContentScale,
+            isPipSupported = isPipSupported,
+            onVideoContentScaleClick = onVideoContentScaleClick,
+            onVideoContentScaleLongClick = onVideoContentScaleLongClick,
+            onLockControlsClick = onLockControlsClick,
+            onPictureInPictureClick = onPictureInPictureClick,
+            onRotateClick = onRotateClick,
+            onPlayInBackgroundClick = onPlayInBackgroundClick,
+            onSubtitleClick = onSubtitleClick,
+            onPlaylistClick = onPlaylistClick,
+            onPlaybackSpeedClick = onPlaybackSpeedClick,
         )
+    }
+}
+
+@OptIn(UnstableApi::class)
+@Composable
+private fun BiliPortraitBottomControls(
+    player: Player,
+    mediaPresentationState: MediaPresentationState,
+    videoContentScale: VideoContentScale,
+    isPipSupported: Boolean,
+    onVideoContentScaleClick: () -> Unit,
+    onVideoContentScaleLongClick: () -> Unit,
+    onLockControlsClick: () -> Unit,
+    onPictureInPictureClick: () -> Unit,
+    onRotateClick: () -> Unit,
+    onPlayInBackgroundClick: () -> Unit,
+    onSubtitleClick: () -> Unit,
+    onPlaylistClick: () -> Unit,
+    onPlaybackSpeedClick: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onSeekEnd: () -> Unit,
+) {
+    Text(
+        modifier = Modifier.fillMaxWidth(),
+        text = "${mediaPresentationState.positionFormatted} / ${mediaPresentationState.durationFormatted}",
+        color = Color.White,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Medium,
+    )
+    BiliPlayerSeekbar(
+        position = mediaPresentationState.position.toFloat(),
+        duration = mediaPresentationState.duration.toFloat(),
+        onSeek = { onSeek(it.toLong()) },
+        onSeekFinished = onSeekEnd,
+        compact = true,
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
+        PlayPauseButton(player = player, modifier = Modifier.size(52.dp))
+        PreviousButton(player = player, modifier = Modifier.size(40.dp))
+        NextButton(player = player, modifier = Modifier.size(40.dp))
+        BiliTextAction(text = "字幕", onClick = onSubtitleClick)
+        BiliTextAction(text = "选集", onClick = onPlaylistClick)
+        BiliTextAction(text = "倍速", onClick = onPlaybackSpeedClick)
+        BiliTextAction(text = "缩放", onClick = onVideoContentScaleClick)
+        BiliIconAction(onClick = onLockControlsClick, icon = R.drawable.ic_lock_open)
+        BiliIconAction(onClick = onVideoContentScaleLongClick, icon = videoContentScale.drawableRes())
+        BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_screen_rotation)
+        if (isPipSupported) {
+            BiliIconAction(onClick = onPictureInPictureClick, icon = R.drawable.ic_pip)
+        }
+        BiliIconAction(onClick = onPlayInBackgroundClick, icon = R.drawable.ic_headset)
+    }
+}
+
+@Composable
+private fun BiliActionRow(
+    modifier: Modifier = Modifier,
+    controlsAlignment: Alignment.Horizontal,
+    videoContentScale: VideoContentScale,
+    isPipSupported: Boolean,
+    onVideoContentScaleClick: () -> Unit,
+    onVideoContentScaleLongClick: () -> Unit,
+    onLockControlsClick: () -> Unit,
+    onPictureInPictureClick: () -> Unit,
+    onRotateClick: () -> Unit,
+    onPlayInBackgroundClick: () -> Unit,
+    onSubtitleClick: () -> Unit,
+    onPlaylistClick: () -> Unit,
+    onPlaybackSpeedClick: () -> Unit,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(24.dp, alignment = controlsAlignment),
+    ) {
+        BiliTextAction(text = "字幕", onClick = onSubtitleClick)
+        BiliTextAction(text = "选集", onClick = onPlaylistClick)
+        BiliTextAction(text = "倍速", onClick = onPlaybackSpeedClick)
+        BiliTextAction(text = "缩放", onClick = onVideoContentScaleClick)
+        BiliIconAction(onClick = onVideoContentScaleLongClick, icon = videoContentScale.drawableRes())
+        BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_screen_rotation)
+        BiliIconAction(onClick = onLockControlsClick, icon = R.drawable.ic_lock_open)
+        if (isPipSupported) {
+            BiliIconAction(onClick = onPictureInPictureClick, icon = R.drawable.ic_pip)
+        }
+        BiliIconAction(onClick = onPlayInBackgroundClick, icon = R.drawable.ic_headset)
     }
 }
 
@@ -193,21 +296,37 @@ private fun BiliTextAction(text: String, onClick: () -> Unit) {
     )
 }
 
+@Composable
+private fun BiliIconAction(onClick: () -> Unit, icon: Int) {
+    PlayerButton(
+        modifier = Modifier.size(42.dp),
+        onClick = onClick,
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier.size(28.dp),
+        )
+    }
+}
+
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BiliPlayerSeekbar(
     modifier: Modifier = Modifier,
     position: Float,
     duration: Float,
+    compact: Boolean = false,
     onSeek: (Float) -> Unit,
     onSeekFinished: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val trackHeight = if (compact) 3.dp else 4.dp
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Slider(
             modifier = modifier
                 .fillMaxWidth()
-                .height(28.dp),
+                .height(if (compact) 24.dp else 28.dp),
             value = position.coerceIn(0f, duration.coerceAtLeast(0f)),
             valueRange = 0f..duration.coerceAtLeast(1f),
             onValueChange = onSeek,
@@ -222,7 +341,7 @@ private fun BiliPlayerSeekbar(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(4.dp)
+                        .height(trackHeight)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.34f)),
                 ) {
@@ -237,23 +356,23 @@ private fun BiliPlayerSeekbar(
             thumb = {
                 Box(
                     modifier = Modifier
-                        .width(24.dp)
-                        .height(18.dp)
-                        .clip(RoundedCornerShape(5.dp))
+                        .width(28.dp)
+                        .height(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
                         .background(Color.White)
-                        .border(1.5.dp, Color.Black.copy(alpha = 0.75f), RoundedCornerShape(5.dp)),
+                        .border(2.dp, Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Canvas(modifier = Modifier.size(12.dp)) {
+                    Canvas(modifier = Modifier.size(14.dp)) {
                         drawCircle(
                             color = Color.Black.copy(alpha = 0.88f),
-                            radius = 2.2.dp.toPx(),
-                            center = center.copy(x = center.x - 3.dp.toPx()),
+                            radius = 2.4.dp.toPx(),
+                            center = center.copy(x = center.x - 3.6.dp.toPx()),
                         )
                         drawCircle(
                             color = Color.Black.copy(alpha = 0.88f),
-                            radius = 2.2.dp.toPx(),
-                            center = center.copy(x = center.x + 3.dp.toPx()),
+                            radius = 2.4.dp.toPx(),
+                            center = center.copy(x = center.x + 3.6.dp.toPx()),
                         )
                     }
                 }
