@@ -41,8 +41,14 @@ android {
         }
 
         getByName("debug") {
-            isDebuggable = true
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             applicationIdSuffix = ".debug"
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
 
         create("release-with-debug-signing") {
