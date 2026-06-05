@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -206,6 +207,11 @@ fun MediaPlayerScreen(
                     .background(Color.Black),
             ) {
                 PlayerContentFrame(
+                    modifier = if (isPortrait) {
+                        Modifier.offset(y = (-72).dp)
+                    } else {
+                        Modifier
+                    },
                     player = player,
                     pictureInPictureState = pictureInPictureState,
                     controlsVisibilityState = controlsVisibilityState,
@@ -314,12 +320,14 @@ fun MediaPlayerScreen(
                                     },
                                     onPlayInBackgroundClick = onPlayInBackgroundClick,
                                 )
-                                BiliCenterRightLockButton(
-                                    onClick = {
-                                        controlsVisibilityState.showControls()
-                                        controlsVisibilityState.lockControls()
-                                    },
-                                )
+                                if (!isPortrait) {
+                                    BiliCenterRightLockButton(
+                                        onClick = {
+                                            controlsVisibilityState.showControls()
+                                            controlsVisibilityState.lockControls()
+                                        },
+                                    )
+                                }
                             }
                             if (controlsVisibilityState.controlsVisible && isPortrait) {
                                 BiliPortraitSideActions(
@@ -338,6 +346,10 @@ fun MediaPlayerScreen(
                                     onVideoScaleClick = {
                                         controlsVisibilityState.hideControls()
                                         overlayView = OverlayView.VIDEO_CONTENT_SCALE
+                                    },
+                                    onLockControlsClick = {
+                                        controlsVisibilityState.showControls()
+                                        controlsVisibilityState.lockControls()
                                     },
                                 )
                             }
@@ -545,24 +557,18 @@ fun BoxScope.BiliPortraitSideActions(
     onPlaylistClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
     onVideoScaleClick: () -> Unit,
+    onLockControlsClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
-            .align(Alignment.CenterEnd)
-            .padding(end = 18.dp, bottom = 76.dp),
+            .align(Alignment.BottomEnd)
+            .padding(end = 18.dp, bottom = 132.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         BiliPortraitSideAction(label = "字幕", icon = coreUiR.drawable.ic_subtitle_track, onClick = onSubtitleClick)
         BiliPortraitSideAction(label = "选集", icon = coreUiR.drawable.ic_playlist, onClick = onPlaylistClick)
-    }
-    Column(
-        modifier = Modifier
-            .align(Alignment.CenterEnd)
-            .padding(end = 18.dp, top = 76.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
+        BiliPortraitSideAction(label = "锁定", icon = coreUiR.drawable.ic_lock_open, onClick = onLockControlsClick)
         BiliPortraitSideAction(label = "倍速", icon = coreUiR.drawable.ic_speed, onClick = onPlaybackSpeedClick)
         BiliPortraitSideAction(label = "缩放", icon = coreUiR.drawable.ic_width_wide, onClick = onVideoScaleClick)
     }
