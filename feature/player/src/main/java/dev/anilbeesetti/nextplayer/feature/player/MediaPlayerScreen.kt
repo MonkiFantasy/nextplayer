@@ -1,9 +1,13 @@
 package dev.anilbeesetti.nextplayer.feature.player
 
+import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.CornerPathEffect
 import android.graphics.Paint
 import android.graphics.Path as AndroidPath
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
@@ -17,7 +21,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -35,7 +41,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,6 +51,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,8 +59,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -64,6 +72,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.media3.common.Player
@@ -101,6 +110,8 @@ import dev.anilbeesetti.nextplayer.feature.player.ui.SubtitleConfiguration
 import dev.anilbeesetti.nextplayer.feature.player.ui.VerticalProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsBottomView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsTopView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
@@ -196,6 +207,12 @@ fun MediaPlayerScreen(
         }
     }
 
+    LaunchedEffect(isPortrait, controlsVisibilityState.controlsLocked) {
+        if (isPortrait && controlsVisibilityState.controlsLocked) {
+            controlsVisibilityState.unlockControls()
+        }
+    }
+
     var overlayView by remember { mutableStateOf<OverlayView?>(null) }
     val portraitVideoBottomReserve = 300.dp
 
@@ -244,14 +261,6 @@ fun MediaPlayerScreen(
                     )
                 }
 
-                if (mediaPresentationState.isBuffering) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(72.dp),
-                    )
-                }
-
                 DoubleTapIndicator(tapGestureState = tapGestureState)
 
                 AnimatedVisibility(
@@ -267,7 +276,7 @@ fun MediaPlayerScreen(
                     )
                 }
 
-                if (controlsVisibilityState.controlsVisible && controlsVisibilityState.controlsLocked) {
+                if (!isPortrait && controlsVisibilityState.controlsVisible && controlsVisibilityState.controlsLocked) {
                     BiliLockedControls(
                         onUnlockClick = { controlsVisibilityState.unlockControls() },
                     )
@@ -350,14 +359,16 @@ fun MediaPlayerScreen(
                                         controlsVisibilityState.hideControls()
                                         overlayView = OverlayView.VIDEO_CONTENT_SCALE
                                     },
-                                    onLockControlsClick = {
-                                        controlsVisibilityState.showControls()
-                                        controlsVisibilityState.lockControls()
-                                    },
                                 )
                             }
+                            val seekPreviewPositionMs = (
+                                (seekGestureState.seekStartPosition ?: 0L) +
+                                    (seekGestureState.seekAmount ?: 0L)
+                            ).coerceIn(0L, mediaPresentationState.duration.coerceAtLeast(0L))
                             when {
                                 seekGestureState.seekAmount != null -> BiliSeekPreview(
+                                    player = player,
+                                    positionMs = seekPreviewPositionMs,
                                     position = seekGestureState.seekToPositionFormated,
                                     duration = mediaPresentationState.durationFormatted,
                                 )
@@ -560,7 +571,6 @@ fun BoxScope.BiliPortraitSideActions(
     onPlaylistClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
     onVideoScaleClick: () -> Unit,
-    onLockControlsClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -571,7 +581,6 @@ fun BoxScope.BiliPortraitSideActions(
     ) {
         BiliPortraitSideAction(label = "字幕", icon = coreUiR.drawable.ic_subtitle_track, onClick = onSubtitleClick)
         BiliPortraitSideAction(label = "选集", icon = coreUiR.drawable.ic_playlist, onClick = onPlaylistClick)
-        BiliPortraitSideAction(label = "锁定", icon = coreUiR.drawable.ic_lock_open, onClick = onLockControlsClick)
         BiliPortraitSideAction(label = "倍速", icon = coreUiR.drawable.ic_speed, onClick = onPlaybackSpeedClick)
         BiliPortraitSideAction(label = "缩放", icon = coreUiR.drawable.ic_width_wide, onClick = onVideoScaleClick)
     }
@@ -697,35 +706,80 @@ private fun BiliPortraitSideAction(
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun BiliSeekPreview(
     modifier: Modifier = Modifier,
+    player: Player,
+    positionMs: Long,
     position: String,
     duration: String,
 ) {
+    val context = LocalContext.current.applicationContext
+    val mediaUri = player.currentMediaItem?.localConfiguration?.uri
+    val previewPositionMs = (positionMs / 500L * 500L).coerceAtLeast(0L)
+    val previewBitmap by produceState<Bitmap?>(null, mediaUri, previewPositionMs) {
+        value = loadSeekPreviewBitmap(
+            context = context,
+            uri = mediaUri,
+            positionMs = previewPositionMs,
+        )
+    }
+    val previewShape = RoundedCornerShape(5.dp)
+
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(width = 230.dp, height = 128.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color.Black.copy(alpha = 0.42f)),
+                .size(width = 164.dp, height = 92.dp)
+                .clip(previewShape)
+                .background(Color.Black.copy(alpha = 0.48f))
+                .border(1.2.dp, Color.White.copy(alpha = 0.96f), previewShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = "预览",
-                color = Color.White.copy(alpha = 0.58f),
-                style = MaterialTheme.typography.titleMedium,
-            )
+            previewBitmap?.let { bitmap ->
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
         }
         Text(
             text = "$position / $duration",
             color = Color.White,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            fontSize = 20.sp,
+            lineHeight = 22.sp,
+            fontWeight = FontWeight.Medium,
         )
+    }
+}
+
+private suspend fun loadSeekPreviewBitmap(
+    context: Context,
+    uri: Uri?,
+    positionMs: Long,
+): Bitmap? = withContext(Dispatchers.IO) {
+    if (uri == null) return@withContext null
+
+    val retriever = MediaMetadataRetriever()
+    try {
+        when (uri.scheme) {
+            "content", "file", "android.resource" -> retriever.setDataSource(context, uri)
+            else -> retriever.setDataSource(uri.toString(), emptyMap<String, String>())
+        }
+        retriever.getFrameAtTime(
+            positionMs.coerceAtLeast(0L) * 1000L,
+            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+        )
+    } catch (_: Throwable) {
+        null
+    } finally {
+        runCatching { retriever.release() }
     }
 }
 
