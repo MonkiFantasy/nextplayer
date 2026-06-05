@@ -38,9 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -304,67 +302,12 @@ private fun BiliFullscreenButton(onClick: () -> Unit) {
         modifier = Modifier.size(34.dp),
         onClick = onClick,
     ) {
-        Canvas(modifier = Modifier.size(20.dp)) {
-            val stroke = 1.8.dp.toPx()
-            val arm = 6.5.dp.toPx()
-            val pad = 2.dp.toPx()
-            drawLine(
-                Color.White,
-                Offset(pad, pad),
-                Offset(pad + arm, pad),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                Color.White,
-                Offset(pad, pad),
-                Offset(pad, pad + arm),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                Color.White,
-                Offset(size.width - pad, pad),
-                Offset(size.width - pad - arm, pad),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                Color.White,
-                Offset(size.width - pad, pad),
-                Offset(size.width - pad, pad + arm),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                Color.White,
-                Offset(pad, size.height - pad),
-                Offset(pad + arm, size.height - pad),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                Color.White,
-                Offset(pad, size.height - pad),
-                Offset(pad, size.height - pad - arm),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                Color.White,
-                Offset(size.width - pad, size.height - pad),
-                Offset(size.width - pad - arm, size.height - pad),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                Color.White,
-                Offset(size.width - pad, size.height - pad),
-                Offset(size.width - pad, size.height - pad - arm),
-                strokeWidth = stroke,
-                cap = StrokeCap.Round,
-            )
-        }
+        Icon(
+            painter = painterResource(R.drawable.ic_fit_screen),
+            contentDescription = null,
+            modifier = Modifier.size(22.dp),
+            tint = Color.White,
+        )
     }
 }
 

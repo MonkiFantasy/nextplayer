@@ -1,5 +1,6 @@
 package dev.anilbeesetti.nextplayer.feature.player.state
 
+import android.content.res.Configuration
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -9,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.core.view.WindowInsetsCompat.Type
 import androidx.media3.common.Player
 import androidx.media3.common.listen
 import dev.anilbeesetti.nextplayer.feature.player.extensions.toggleSystemBars
@@ -22,9 +25,14 @@ import kotlinx.coroutines.launch
 fun rememberControlsVisibilityState(player: Player, hideAfter: Duration): ControlsVisibilityState {
     val activity = LocalActivity.current
     val coroutineScope = rememberCoroutineScope()
+    val isPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
     val controlsVisibilityState = remember { ControlsVisibilityState(player, hideAfter, coroutineScope) }
     LaunchedEffect(player) { controlsVisibilityState.observe() }
-    LaunchedEffect(controlsVisibilityState.controlsVisible, controlsVisibilityState.controlsLocked) {
+    LaunchedEffect(controlsVisibilityState.controlsVisible, controlsVisibilityState.controlsLocked, isPortrait) {
+        if (isPortrait) {
+            activity?.toggleSystemBars(showBars = false, types = Type.statusBars())
+            return@LaunchedEffect
+        }
         if (controlsVisibilityState.controlsLocked) {
             activity?.toggleSystemBars(showBars = false)
             return@LaunchedEffect

@@ -46,9 +46,10 @@ fun ControlsTopView(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         PlayerButton(onClick = onBackClick) {
-            Icon(
-                painter = painterResource(R.drawable.ic_arrow_left),
-                contentDescription = null,
+            Text(
+                text = "<",
+                color = Color.White,
+                style = MaterialTheme.typography.headlineSmall,
             )
         }
         Text(

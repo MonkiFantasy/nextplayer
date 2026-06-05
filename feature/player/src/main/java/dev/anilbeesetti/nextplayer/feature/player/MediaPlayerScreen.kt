@@ -350,7 +350,9 @@ fun MediaPlayerScreen(
                                 videoZoomAndContentScaleState.showContentScaleIndicator -> InfoView(
                                     info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()),
                                 )
-                                controlsVisibilityState.controlsVisible && isPortrait && !mediaPresentationState.isPlaying -> BiliPauseCenterButton(
+                                controlsVisibilityState.controlsVisible &&
+                                    isPortrait &&
+                                    !mediaPresentationState.isPlaying -> BiliPauseCenterButton(
                                     player = player,
                                     timeText = "${mediaPresentationState.positionFormatted} / ${mediaPresentationState.durationFormatted}",
                                 )
@@ -552,9 +554,9 @@ fun BoxScope.BiliPortraitSideActions(
     ) {
         BiliPortraitSideAction(label = "字幕", icon = coreUiR.drawable.ic_subtitle_track, onClick = onSubtitleClick)
         BiliPortraitSideAction(label = "选集", icon = coreUiR.drawable.ic_playlist, onClick = onPlaylistClick)
+        BiliPortraitSideAction(label = "锁定", icon = coreUiR.drawable.ic_lock_open, onClick = onLockControlsClick)
         BiliPortraitSideAction(label = "倍速", icon = coreUiR.drawable.ic_speed, onClick = onPlaybackSpeedClick)
         BiliPortraitSideAction(label = "缩放", icon = coreUiR.drawable.ic_width_wide, onClick = onVideoScaleClick)
-        BiliPortraitSideAction(label = "锁定", icon = coreUiR.drawable.ic_lock_open, onClick = onLockControlsClick)
     }
 }
 
@@ -621,25 +623,15 @@ private fun BiliPortraitSmallAction(
     icon: Int,
     onClick: () -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(1.dp),
+    PlayerButton(
+        modifier = Modifier.size(34.dp),
+        onClick = onClick,
     ) {
-        PlayerButton(
-            modifier = Modifier.size(34.dp),
-            onClick = onClick,
-        ) {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = label,
-                modifier = Modifier.size(22.dp),
-                tint = Color.White,
-            )
-        }
-        Text(
-            text = label,
-            color = Color.White,
-            style = MaterialTheme.typography.labelSmall,
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = label,
+            modifier = Modifier.size(22.dp),
+            tint = Color.White,
         )
     }
 }
