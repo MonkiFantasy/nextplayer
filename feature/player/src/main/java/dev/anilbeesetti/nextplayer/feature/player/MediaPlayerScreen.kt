@@ -73,6 +73,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.media3.common.Player
@@ -110,6 +111,7 @@ import dev.anilbeesetti.nextplayer.feature.player.ui.SubtitleConfiguration
 import dev.anilbeesetti.nextplayer.feature.player.ui.VerticalProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsBottomView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsTopView
+import io.github.anilbeesetti.nextlib.mediainfo.MediaThumbnailRetriever
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -716,14 +718,22 @@ fun BiliSeekPreview(
     duration: String,
 ) {
     val context = LocalContext.current.applicationContext
-    val mediaUri = player.currentMediaItem?.localConfiguration?.uri
+    val currentMediaItem = player.currentMediaItem
+    val mediaUri = currentMediaItem?.localConfiguration?.uri
+        ?: currentMediaItem?.mediaId?.takeIf { it.isNotBlank() }?.toUri()
     val previewPositionMs = (positionMs / 500L * 500L).coerceAtLeast(0L)
-    val previewBitmap by produceState<Bitmap?>(null, mediaUri, previewPositionMs) {
-        value = loadSeekPreviewBitmap(
+    val previewCache = remember(mediaUri) { mutableMapOf<Long, Bitmap>() }
+    var lastPreviewBitmap by remember(mediaUri) { mutableStateOf<Bitmap?>(null) }
+    val previewBitmap by produceState<Bitmap?>(lastPreviewBitmap, mediaUri, previewPositionMs) {
+        val loadedBitmap = previewCache[previewPositionMs] ?: loadSeekPreviewBitmap(
             context = context,
             uri = mediaUri,
             positionMs = previewPositionMs,
-        )
+        )?.also { previewCache[previewPositionMs] = it }
+        if (loadedBitmap != null) {
+            lastPreviewBitmap = loadedBitmap
+        }
+        value = loadedBitmap ?: lastPreviewBitmap
     }
     val previewShape = RoundedCornerShape(5.dp)
 
@@ -766,21 +776,92 @@ private suspend fun loadSeekPreviewBitmap(
 ): Bitmap? = withContext(Dispatchers.IO) {
     if (uri == null) return@withContext null
 
+    val timeUs = positionMs.coerceAtLeast(0L) * 1000L
+    val nativeBitmap = loadSeekPreviewWithNativeRetriever(context, uri, timeUs)
+    if (nativeBitmap != null && !nativeBitmap.isProbablyBlankFrame()) {
+        return@withContext nativeBitmap
+    }
+    loadSeekPreviewWithNextlibRetriever(context, uri, timeUs) ?: nativeBitmap
+}
+
+private fun loadSeekPreviewWithNativeRetriever(
+    context: Context,
+    uri: Uri,
+    timeUs: Long,
+): Bitmap? {
     val retriever = MediaMetadataRetriever()
-    try {
-        when (uri.scheme) {
-            "content", "file", "android.resource" -> retriever.setDataSource(context, uri)
-            else -> retriever.setDataSource(uri.toString(), emptyMap<String, String>())
-        }
-        retriever.getFrameAtTime(
-            positionMs.coerceAtLeast(0L) * 1000L,
-            MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-        )
+    return try {
+        setNativeRetrieverDataSource(context, retriever, uri)
+        retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST)
+            ?: retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
     } catch (_: Throwable) {
         null
     } finally {
         runCatching { retriever.release() }
     }
+}
+
+private fun loadSeekPreviewWithNextlibRetriever(
+    context: Context,
+    uri: Uri,
+    timeUs: Long,
+): Bitmap? {
+    val retriever = MediaThumbnailRetriever()
+    return try {
+        retriever.setDataSource(context, uri)
+        retriever.getFrameAtTime(timeUs)
+    } catch (_: Throwable) {
+        null
+    } finally {
+        runCatching { retriever.release() }
+    }
+}
+
+private fun setNativeRetrieverDataSource(
+    context: Context,
+    retriever: MediaMetadataRetriever,
+    uri: Uri,
+) {
+    if (uri.scheme == "content") {
+        context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+            retriever.setDataSource(descriptor.fileDescriptor)
+            return
+        }
+    }
+    when (uri.scheme) {
+        "file" -> uri.path?.let(retriever::setDataSource) ?: retriever.setDataSource(context, uri)
+        "android.resource" -> retriever.setDataSource(context, uri)
+        "content" -> retriever.setDataSource(context, uri)
+        else -> retriever.setDataSource(uri.toString(), emptyMap<String, String>())
+    }
+}
+
+private fun Bitmap.isProbablyBlankFrame(): Boolean {
+    if (width <= 0 || height <= 0) return true
+
+    val xs = intArrayOf(width / 5, width / 2, width * 4 / 5).map { it.coerceIn(0, width - 1) }
+    val ys = intArrayOf(height / 5, height / 2, height * 4 / 5).map { it.coerceIn(0, height - 1) }
+    var minLuma = 255
+    var maxLuma = 0
+    var totalLuma = 0
+    var count = 0
+
+    for (x in xs) {
+        for (y in ys) {
+            val pixel = getPixel(x, y)
+            val red = pixel shr 16 and 0xFF
+            val green = pixel shr 8 and 0xFF
+            val blue = pixel and 0xFF
+            val luma = (red * 30 + green * 59 + blue * 11) / 100
+            minLuma = minOf(minLuma, luma)
+            maxLuma = maxOf(maxLuma, luma)
+            totalLuma += luma
+            count++
+        }
+    }
+
+    val averageLuma = totalLuma / count.coerceAtLeast(1)
+    return averageLuma < 12 || (averageLuma < 32 && maxLuma - minLuma < 4)
 }
 
 @Composable
