@@ -77,6 +77,7 @@ import dev.anilbeesetti.nextplayer.feature.player.extensions.nameRes
 import dev.anilbeesetti.nextplayer.feature.player.state.ControlsVisibilityState
 import dev.anilbeesetti.nextplayer.feature.player.state.VerticalGesture
 import dev.anilbeesetti.nextplayer.feature.player.state.durationFormatted
+import dev.anilbeesetti.nextplayer.feature.player.state.positionFormatted
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberBrightnessState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberControlsVisibilityState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberErrorState
@@ -279,7 +280,7 @@ fun MediaPlayerScreen(
                                 exit = fadeOut(),
                             ) {
                                 ControlsTopView(
-                                    title = metadataState.title ?: "",
+                                    title = (metadataState.title ?: "").takeUnless { isPortrait } ?: "",
                                     onAudioClick = {
                                         controlsVisibilityState.hideControls()
                                         overlayView = OverlayView.AUDIO_SELECTOR
@@ -296,6 +297,7 @@ fun MediaPlayerScreen(
                                         controlsVisibilityState.hideControls()
                                         overlayView = OverlayView.PLAYLIST
                                     },
+                                    showActions = !isPortrait,
                                     onBackClick = onBackClick,
                                 )
                             }
@@ -355,6 +357,7 @@ fun MediaPlayerScreen(
                                 )
                                 controlsVisibilityState.controlsVisible && !mediaPresentationState.isPlaying -> BiliPauseCenterButton(
                                     player = player,
+                                    timeText = "${mediaPresentationState.positionFormatted} / ${mediaPresentationState.durationFormatted}",
                                 )
                                 else -> Unit
                             }
@@ -368,6 +371,7 @@ fun MediaPlayerScreen(
                                 ControlsBottomView(
                                     player = player,
                                     mediaPresentationState = mediaPresentationState,
+                                    title = metadataState.title ?: "",
                                     controlsAlignment = when (playerPreferences.controlButtonsPosition) {
                                         ControlButtonsPosition.LEFT -> Alignment.Start
                                         ControlButtonsPosition.RIGHT -> Alignment.End
@@ -511,18 +515,28 @@ fun MediaPlayerScreen(
     }
 }
 
-
 @Composable
-fun BoxScope.BiliPauseCenterButton(player: Player) {
-    Box(
-        modifier = Modifier
-            .align(Alignment.Center)
-            .size(76.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.Black.copy(alpha = 0.34f)),
-        contentAlignment = Alignment.Center,
+fun BoxScope.BiliPauseCenterButton(player: Player, timeText: String) {
+    Column(
+        modifier = Modifier.align(Alignment.Center),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        PlayPauseButton(player = player, modifier = Modifier.size(68.dp))
+        Box(
+            modifier = Modifier
+                .size(68.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.Black.copy(alpha = 0.28f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            PlayPauseButton(player = player, modifier = Modifier.size(60.dp))
+        }
+        Text(
+            text = timeText,
+            color = Color.White.copy(alpha = 0.92f),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 
@@ -541,7 +555,7 @@ fun BoxScope.BiliPortraitSideActions(
             .align(Alignment.CenterEnd)
             .padding(end = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         BiliPortraitSideAction(label = "字幕", icon = coreUiR.drawable.ic_subtitle_track, onClick = onSubtitleClick)
         BiliPortraitSideAction(label = "选集", icon = coreUiR.drawable.ic_playlist, onClick = onPlaylistClick)
@@ -566,20 +580,20 @@ private fun BiliPortraitSideAction(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         PlayerButton(
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(36.dp),
             onClick = onClick,
         ) {
             Icon(
                 painter = painterResource(icon),
                 contentDescription = label,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(24.dp),
                 tint = Color.White,
             )
         }
         Text(
             text = label,
             color = Color.White,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
         )
     }
 }

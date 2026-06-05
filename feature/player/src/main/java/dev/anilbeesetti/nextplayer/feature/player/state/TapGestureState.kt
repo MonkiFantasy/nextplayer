@@ -105,14 +105,16 @@ class TapGestureState(
                 interactionSource.tryEmit(PressInteraction.Press(offset))
             }
 
-            DoubleTapAction.PLAY_PAUSE -> {
-                when (player.isPlaying) {
-                    true -> player.pause()
-                    false -> player.play()
-                }
-            }
+            DoubleTapAction.PLAY_PAUSE -> togglePlayPause()
         }
         resetDoubleTapSeekState()
+    }
+
+    fun togglePlayPause() {
+        when (player.isPlaying) {
+            true -> player.pause()
+            false -> player.play()
+        }
     }
 
     fun handleLongPress(offset: Offset) {

@@ -38,7 +38,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -66,6 +68,7 @@ fun ControlsBottomView(
     modifier: Modifier = Modifier,
     player: Player,
     mediaPresentationState: MediaPresentationState,
+    title: String,
     controlsAlignment: Alignment.Horizontal,
     videoContentScale: VideoContentScale,
     isPipSupported: Boolean,
@@ -96,6 +99,7 @@ fun ControlsBottomView(
             BiliPortraitBottomControls(
                 player = player,
                 mediaPresentationState = mediaPresentationState,
+                title = title,
                 videoContentScale = videoContentScale,
                 isPipSupported = isPipSupported,
                 onVideoContentScaleClick = onVideoContentScaleClick,
@@ -197,6 +201,7 @@ private fun BiliLandscapeBottomControls(
 private fun BiliPortraitBottomControls(
     player: Player,
     mediaPresentationState: MediaPresentationState,
+    title: String,
     videoContentScale: VideoContentScale,
     isPipSupported: Boolean,
     onVideoContentScaleClick: () -> Unit,
@@ -213,10 +218,11 @@ private fun BiliPortraitBottomControls(
 ) {
     Text(
         modifier = Modifier.fillMaxWidth(),
-        text = "${mediaPresentationState.positionFormatted} / ${mediaPresentationState.durationFormatted}",
+        text = title,
         color = Color.White,
-        style = MaterialTheme.typography.headlineSmall,
+        style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.Medium,
+        maxLines = 2,
     )
     BiliPlayerSeekbar(
         position = mediaPresentationState.position.toFloat(),
@@ -228,13 +234,12 @@ private fun BiliPortraitBottomControls(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        PlayPauseButton(player = player, modifier = Modifier.size(46.dp))
-        PreviousButton(player = player, modifier = Modifier.size(36.dp))
-        NextButton(player = player, modifier = Modifier.size(36.dp))
+        PreviousButton(player = player, modifier = Modifier.size(32.dp))
+        NextButton(player = player, modifier = Modifier.size(32.dp))
         Spacer(modifier = Modifier.weight(1f))
-        BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_width_wide)
+        BiliFullscreenButton(onClick = onRotateClick)
     }
 }
 
@@ -286,14 +291,84 @@ private fun BiliTextAction(text: String, onClick: () -> Unit) {
 @Composable
 private fun BiliIconAction(onClick: () -> Unit, icon: Int) {
     PlayerButton(
-        modifier = Modifier.size(36.dp),
+        modifier = Modifier.size(34.dp),
         onClick = onClick,
     ) {
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
         )
+    }
+}
+
+@Composable
+private fun BiliFullscreenButton(onClick: () -> Unit) {
+    PlayerButton(
+        modifier = Modifier.size(34.dp),
+        onClick = onClick,
+    ) {
+        Canvas(modifier = Modifier.size(20.dp)) {
+            val stroke = 1.8.dp.toPx()
+            val arm = 6.5.dp.toPx()
+            val pad = 2.dp.toPx()
+            drawLine(
+                Color.White,
+                Offset(pad, pad),
+                Offset(pad + arm, pad),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(pad, pad),
+                Offset(pad, pad + arm),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(size.width - pad, pad),
+                Offset(size.width - pad - arm, pad),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(size.width - pad, pad),
+                Offset(size.width - pad, pad + arm),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(pad, size.height - pad),
+                Offset(pad + arm, size.height - pad),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(pad, size.height - pad),
+                Offset(pad, size.height - pad - arm),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(size.width - pad, size.height - pad),
+                Offset(size.width - pad - arm, size.height - pad),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(size.width - pad, size.height - pad),
+                Offset(size.width - pad, size.height - pad - arm),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+        }
     }
 }
 
@@ -308,7 +383,7 @@ private fun BiliPlayerSeekbar(
     onSeekFinished: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val trackHeight = if (compact) 3.dp else 3.5.dp
+    val trackHeight = if (compact) 2.4.dp else 3.dp
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Slider(
             modifier = modifier
@@ -343,23 +418,23 @@ private fun BiliPlayerSeekbar(
             thumb = {
                 Box(
                     modifier = Modifier
-                        .width(24.dp)
-                        .height(20.dp)
-                        .clip(RoundedCornerShape(6.dp))
+                        .width(if (compact) 18.dp else 20.dp)
+                        .height(if (compact) 15.dp else 16.dp)
+                        .clip(RoundedCornerShape(4.5.dp))
                         .background(Color.White)
-                        .border(2.dp, Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp)),
+                        .border(1.4.dp, Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.5.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Canvas(modifier = Modifier.size(12.dp)) {
+                    Canvas(modifier = Modifier.size(if (compact) 8.dp else 9.dp)) {
                         drawCircle(
                             color = Color.Black.copy(alpha = 0.88f),
-                            radius = 2.1.dp.toPx(),
-                            center = center.copy(x = center.x - 3.1.dp.toPx()),
+                            radius = 1.55.dp.toPx(),
+                            center = center.copy(x = center.x - 2.3.dp.toPx()),
                         )
                         drawCircle(
                             color = Color.Black.copy(alpha = 0.88f),
-                            radius = 2.1.dp.toPx(),
-                            center = center.copy(x = center.x + 3.1.dp.toPx()),
+                            radius = 1.55.dp.toPx(),
+                            center = center.copy(x = center.x + 2.3.dp.toPx()),
                         )
                     }
                 }

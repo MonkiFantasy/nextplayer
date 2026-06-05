@@ -1,5 +1,6 @@
 package dev.anilbeesetti.nextplayer.feature.player.ui
 
+import android.content.res.Configuration
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import dev.anilbeesetti.nextplayer.feature.player.extensions.detectCustomHorizontalDragGestures
 import dev.anilbeesetti.nextplayer.feature.player.extensions.detectCustomTransformGestures
 import dev.anilbeesetti.nextplayer.feature.player.extensions.detectCustomVerticalDragGestures
@@ -27,6 +29,9 @@ fun PlayerGestures(
     videoZoomAndContentScaleState: VideoZoomAndContentScaleState,
     volumeAndBrightnessGestureState: VolumeAndBrightnessGestureState,
 ) {
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     BoxWithConstraints {
         Box(
             modifier = modifier
@@ -37,7 +42,12 @@ fun PlayerGestures(
                     detectTapGestures(
                         onTap = {
                             if (tapGestureState.seekMillis != 0L) return@detectTapGestures
-                            controlsVisibilityState.toggleControlsVisibility()
+                            if (isPortrait) {
+                                tapGestureState.togglePlayPause()
+                                controlsVisibilityState.showControls()
+                            } else {
+                                controlsVisibilityState.toggleControlsVisibility()
+                            }
                         },
                         onDoubleTap = {
                             if (controlsVisibilityState.controlsLocked) return@detectTapGestures
