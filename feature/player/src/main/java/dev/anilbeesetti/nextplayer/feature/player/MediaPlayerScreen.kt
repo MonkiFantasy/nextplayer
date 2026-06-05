@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -198,6 +197,7 @@ fun MediaPlayerScreen(
     }
 
     var overlayView by remember { mutableStateOf<OverlayView?>(null) }
+    val portraitVideoBottomReserve = 300.dp
 
     CompositionLocalProvider(LocalControlsVisibilityState provides controlsVisibilityState) {
         Box {
@@ -208,7 +208,10 @@ fun MediaPlayerScreen(
             ) {
                 PlayerContentFrame(
                     modifier = if (isPortrait) {
-                        Modifier.offset(y = (-72).dp)
+                        // SurfaceView does not reliably reflect a visual-only offset on every device.
+                        // Reserve real layout space at the bottom instead, so portrait video is measured
+                        // in the upper area and visibly moves upward like Bilibili portrait playback.
+                        Modifier.padding(bottom = portraitVideoBottomReserve)
                     } else {
                         Modifier
                     },
@@ -562,9 +565,9 @@ fun BoxScope.BiliPortraitSideActions(
     Column(
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .padding(end = 18.dp, bottom = 132.dp),
+            .padding(end = 18.dp, bottom = 148.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         BiliPortraitSideAction(label = "字幕", icon = coreUiR.drawable.ic_subtitle_track, onClick = onSubtitleClick)
         BiliPortraitSideAction(label = "选集", icon = coreUiR.drawable.ic_playlist, onClick = onPlaylistClick)
@@ -676,13 +679,13 @@ private fun BiliPortraitSideAction(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         PlayerButton(
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(30.dp),
             onClick = onClick,
         ) {
             Icon(
                 painter = painterResource(icon),
                 contentDescription = label,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(18.dp),
                 tint = Color.White,
             )
         }
