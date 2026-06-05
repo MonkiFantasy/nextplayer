@@ -54,7 +54,6 @@ import dev.anilbeesetti.nextplayer.feature.player.buttons.NextButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PlayPauseButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PlayerButton
 import dev.anilbeesetti.nextplayer.feature.player.buttons.PreviousButton
-import dev.anilbeesetti.nextplayer.feature.player.extensions.drawableRes
 import dev.anilbeesetti.nextplayer.feature.player.state.MediaPresentationState
 import dev.anilbeesetti.nextplayer.feature.player.state.durationFormatted
 import dev.anilbeesetti.nextplayer.feature.player.state.positionFormatted
@@ -89,9 +88,9 @@ fun ControlsBottomView(
     Column(
         modifier = modifier
             .padding(systemBarsPadding.copy(top = 0.dp))
-            .padding(horizontal = if (isPortrait) 18.dp else 24.dp)
+            .padding(horizontal = if (isPortrait) 20.dp else 22.dp)
             .padding(bottom = 14.dp.takeIf { systemBarsPadding.calculateBottomPadding() == 0.dp } ?: 0.dp),
-        verticalArrangement = Arrangement.spacedBy(if (isPortrait) 8.dp else 10.dp),
+        verticalArrangement = Arrangement.spacedBy(if (isPortrait) 6.dp else 8.dp),
     ) {
         if (isPortrait) {
             BiliPortraitBottomControls(
@@ -157,7 +156,7 @@ private fun BiliLandscapeBottomControls(
     Text(
         text = "${mediaPresentationState.positionFormatted}/${mediaPresentationState.durationFormatted}",
         color = Color.White,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.bodyLarge,
         fontWeight = FontWeight.Medium,
     )
     BiliPlayerSeekbar(
@@ -169,11 +168,11 @@ private fun BiliLandscapeBottomControls(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        PlayPauseButton(player = player, modifier = Modifier.size(52.dp))
-        PreviousButton(player = player, modifier = Modifier.size(40.dp))
-        NextButton(player = player, modifier = Modifier.size(40.dp))
+        PlayPauseButton(player = player, modifier = Modifier.size(44.dp))
+        PreviousButton(player = player, modifier = Modifier.size(34.dp))
+        NextButton(player = player, modifier = Modifier.size(34.dp))
         Spacer(modifier = Modifier.weight(1f))
         BiliActionRow(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -227,26 +226,15 @@ private fun BiliPortraitBottomControls(
         compact = true,
     )
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        PlayPauseButton(player = player, modifier = Modifier.size(52.dp))
-        PreviousButton(player = player, modifier = Modifier.size(40.dp))
-        NextButton(player = player, modifier = Modifier.size(40.dp))
-        BiliTextAction(text = "字幕", onClick = onSubtitleClick)
-        BiliTextAction(text = "选集", onClick = onPlaylistClick)
-        BiliTextAction(text = "倍速", onClick = onPlaybackSpeedClick)
-        BiliTextAction(text = "缩放", onClick = onVideoContentScaleClick)
-        BiliIconAction(onClick = onLockControlsClick, icon = R.drawable.ic_lock_open)
-        BiliIconAction(onClick = onVideoContentScaleLongClick, icon = videoContentScale.drawableRes())
-        BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_screen_rotation)
-        if (isPipSupported) {
-            BiliIconAction(onClick = onPictureInPictureClick, icon = R.drawable.ic_pip)
-        }
-        BiliIconAction(onClick = onPlayInBackgroundClick, icon = R.drawable.ic_headset)
+        PlayPauseButton(player = player, modifier = Modifier.size(46.dp))
+        PreviousButton(player = player, modifier = Modifier.size(36.dp))
+        NextButton(player = player, modifier = Modifier.size(36.dp))
+        Spacer(modifier = Modifier.weight(1f))
+        BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_width_wide)
     }
 }
 
@@ -269,13 +257,12 @@ private fun BiliActionRow(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(24.dp, alignment = controlsAlignment),
+        horizontalArrangement = Arrangement.spacedBy(20.dp, alignment = controlsAlignment),
     ) {
         BiliTextAction(text = "字幕", onClick = onSubtitleClick)
         BiliTextAction(text = "选集", onClick = onPlaylistClick)
         BiliTextAction(text = "倍速", onClick = onPlaybackSpeedClick)
-        BiliTextAction(text = "缩放", onClick = onVideoContentScaleClick)
-        BiliIconAction(onClick = onVideoContentScaleLongClick, icon = videoContentScale.drawableRes())
+        BiliTextAction(text = "缩放", onClick = onVideoContentScaleLongClick)
         BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_screen_rotation)
         BiliIconAction(onClick = onLockControlsClick, icon = R.drawable.ic_lock_open)
         if (isPipSupported) {
@@ -291,7 +278,7 @@ private fun BiliTextAction(text: String, onClick: () -> Unit) {
         modifier = Modifier.clickable(onClick = onClick),
         text = text,
         color = Color.White,
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Medium,
     )
 }
@@ -299,13 +286,13 @@ private fun BiliTextAction(text: String, onClick: () -> Unit) {
 @Composable
 private fun BiliIconAction(onClick: () -> Unit, icon: Int) {
     PlayerButton(
-        modifier = Modifier.size(42.dp),
+        modifier = Modifier.size(36.dp),
         onClick = onClick,
     ) {
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(24.dp),
         )
     }
 }
@@ -321,12 +308,12 @@ private fun BiliPlayerSeekbar(
     onSeekFinished: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val trackHeight = if (compact) 3.dp else 4.dp
+    val trackHeight = if (compact) 3.dp else 3.5.dp
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Slider(
             modifier = modifier
                 .fillMaxWidth()
-                .height(if (compact) 24.dp else 28.dp),
+                .height(if (compact) 24.dp else 26.dp),
             value = position.coerceIn(0f, duration.coerceAtLeast(0f)),
             valueRange = 0f..duration.coerceAtLeast(1f),
             onValueChange = onSeek,
@@ -356,23 +343,23 @@ private fun BiliPlayerSeekbar(
             thumb = {
                 Box(
                     modifier = Modifier
-                        .width(28.dp)
-                        .height(24.dp)
+                        .width(24.dp)
+                        .height(20.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(Color.White)
                         .border(2.dp, Color.Black.copy(alpha = 0.75f), RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Canvas(modifier = Modifier.size(14.dp)) {
+                    Canvas(modifier = Modifier.size(12.dp)) {
                         drawCircle(
                             color = Color.Black.copy(alpha = 0.88f),
-                            radius = 2.4.dp.toPx(),
-                            center = center.copy(x = center.x - 3.6.dp.toPx()),
+                            radius = 2.1.dp.toPx(),
+                            center = center.copy(x = center.x - 3.1.dp.toPx()),
                         )
                         drawCircle(
                             color = Color.Black.copy(alpha = 0.88f),
-                            radius = 2.4.dp.toPx(),
-                            center = center.copy(x = center.x + 3.6.dp.toPx()),
+                            radius = 2.1.dp.toPx(),
+                            center = center.copy(x = center.x + 3.1.dp.toPx()),
                         )
                     }
                 }

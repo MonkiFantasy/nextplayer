@@ -1,5 +1,6 @@
 package dev.anilbeesetti.nextplayer.feature.player
 
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
@@ -29,7 +30,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -161,6 +162,9 @@ fun MediaPlayerScreen(
     )
     val errorState = rememberErrorState(player = player)
     val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     LaunchedEffect(pictureInPictureState.isInPictureInPictureMode) {
         if (pictureInPictureState.isInPictureInPictureMode) {
@@ -297,6 +301,47 @@ fun MediaPlayerScreen(
                             }
                         },
                         middleView = {
+                            if (controlsVisibilityState.controlsVisible && isPortrait) {
+                                BiliPortraitSideActions(
+                                    onSubtitleClick = {
+                                        controlsVisibilityState.hideControls()
+                                        overlayView = OverlayView.SUBTITLE_SELECTOR
+                                    },
+                                    onPlaylistClick = {
+                                        controlsVisibilityState.hideControls()
+                                        overlayView = OverlayView.PLAYLIST
+                                    },
+                                    onPlaybackSpeedClick = {
+                                        controlsVisibilityState.hideControls()
+                                        overlayView = OverlayView.PLAYBACK_SPEED
+                                    },
+                                    onVideoScaleClick = {
+                                        controlsVisibilityState.hideControls()
+                                        overlayView = OverlayView.VIDEO_CONTENT_SCALE
+                                    },
+                                    onLockControlsClick = {
+                                        controlsVisibilityState.showControls()
+                                        controlsVisibilityState.lockControls()
+                                    },
+                                    onPictureInPictureClick = if (pictureInPictureState.isPipSupported) {
+                                        {
+                                            if (!pictureInPictureState.hasPipPermission) {
+                                                Toast.makeText(
+                                                    context,
+                                                    coreUiR.string.enable_pip_from_settings,
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
+                                                pictureInPictureState.openPictureInPictureSettings()
+                                            } else {
+                                                pictureInPictureState.enterPictureInPictureMode()
+                                            }
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                    onPlayInBackgroundClick = onPlayInBackgroundClick,
+                                )
+                            }
                             when {
                                 seekGestureState.seekAmount != null -> BiliSeekPreview(
                                     position = seekGestureState.seekToPositionFormated,
@@ -308,7 +353,9 @@ fun MediaPlayerScreen(
                                 videoZoomAndContentScaleState.showContentScaleIndicator -> InfoView(
                                     info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()),
                                 )
-                                controlsVisibilityState.controlsVisible -> Unit
+                                controlsVisibilityState.controlsVisible && !mediaPresentationState.isPlaying -> BiliPauseCenterButton(
+                                    player = player,
+                                )
                                 else -> Unit
                             }
                         },
@@ -318,7 +365,6 @@ fun MediaPlayerScreen(
                                 enter = fadeIn(),
                                 exit = fadeOut(),
                             ) {
-                                val context = LocalContext.current
                                 ControlsBottomView(
                                     player = player,
                                     mediaPresentationState = mediaPresentationState,
@@ -358,7 +404,11 @@ fun MediaPlayerScreen(
                                     },
                                     onPictureInPictureClick = {
                                         if (!pictureInPictureState.hasPipPermission) {
-                                            Toast.makeText(context, coreUiR.string.enable_pip_from_settings, Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                coreUiR.string.enable_pip_from_settings,
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
                                             pictureInPictureState.openPictureInPictureSettings()
                                         } else {
                                             pictureInPictureState.enterPictureInPictureMode()
@@ -461,6 +511,78 @@ fun MediaPlayerScreen(
     }
 }
 
+
+@Composable
+fun BoxScope.BiliPauseCenterButton(player: Player) {
+    Box(
+        modifier = Modifier
+            .align(Alignment.Center)
+            .size(76.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.Black.copy(alpha = 0.34f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        PlayPauseButton(player = player, modifier = Modifier.size(68.dp))
+    }
+}
+
+@Composable
+fun BoxScope.BiliPortraitSideActions(
+    onSubtitleClick: () -> Unit,
+    onPlaylistClick: () -> Unit,
+    onPlaybackSpeedClick: () -> Unit,
+    onVideoScaleClick: () -> Unit,
+    onLockControlsClick: () -> Unit,
+    onPictureInPictureClick: (() -> Unit)?,
+    onPlayInBackgroundClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .align(Alignment.CenterEnd)
+            .padding(end = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
+        BiliPortraitSideAction(label = "字幕", icon = coreUiR.drawable.ic_subtitle_track, onClick = onSubtitleClick)
+        BiliPortraitSideAction(label = "选集", icon = coreUiR.drawable.ic_playlist, onClick = onPlaylistClick)
+        BiliPortraitSideAction(label = "倍速", icon = coreUiR.drawable.ic_speed, onClick = onPlaybackSpeedClick)
+        BiliPortraitSideAction(label = "缩放", icon = coreUiR.drawable.ic_width_wide, onClick = onVideoScaleClick)
+        BiliPortraitSideAction(label = "锁定", icon = coreUiR.drawable.ic_lock_open, onClick = onLockControlsClick)
+        onPictureInPictureClick?.let {
+            BiliPortraitSideAction(label = "PiP", icon = coreUiR.drawable.ic_pip, onClick = it)
+        }
+        BiliPortraitSideAction(label = "后台", icon = coreUiR.drawable.ic_headset, onClick = onPlayInBackgroundClick)
+    }
+}
+
+@Composable
+private fun BiliPortraitSideAction(
+    label: String,
+    icon: Int,
+    onClick: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        PlayerButton(
+            modifier = Modifier.size(40.dp),
+            onClick = onClick,
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = label,
+                modifier = Modifier.size(28.dp),
+                tint = Color.White,
+            )
+        }
+        Text(
+            text = label,
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
 
 @Composable
 fun BiliSeekPreview(
