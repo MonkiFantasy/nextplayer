@@ -30,17 +30,19 @@ fun rememberControlsVisibilityState(player: Player, hideAfter: Duration): Contro
     LaunchedEffect(player) { controlsVisibilityState.observe() }
     LaunchedEffect(controlsVisibilityState.controlsVisible, controlsVisibilityState.controlsLocked, isPortrait) {
         if (isPortrait) {
-            activity?.toggleSystemBars(showBars = false, types = Type.statusBars())
+            activity?.toggleSystemBars(showBars = true, types = Type.statusBars())
+            if (controlsVisibilityState.controlsLocked || !controlsVisibilityState.controlsVisible) {
+                activity?.toggleSystemBars(showBars = false, types = Type.navigationBars())
+            } else {
+                activity?.toggleSystemBars(showBars = true, types = Type.navigationBars())
+            }
             return@LaunchedEffect
         }
-        if (controlsVisibilityState.controlsLocked) {
-            activity?.toggleSystemBars(showBars = false)
-            return@LaunchedEffect
-        }
-        if (controlsVisibilityState.controlsVisible) {
-            activity?.toggleSystemBars(showBars = true)
+        activity?.toggleSystemBars(showBars = false, types = Type.statusBars())
+        if (controlsVisibilityState.controlsLocked || !controlsVisibilityState.controlsVisible) {
+            activity?.toggleSystemBars(showBars = false, types = Type.navigationBars())
         } else {
-            activity?.toggleSystemBars(showBars = false)
+            activity?.toggleSystemBars(showBars = true, types = Type.navigationBars())
         }
     }
     return controlsVisibilityState

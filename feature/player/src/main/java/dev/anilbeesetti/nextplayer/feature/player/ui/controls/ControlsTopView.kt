@@ -1,12 +1,14 @@
 package dev.anilbeesetti.nextplayer.feature.player.ui.controls
 
 import androidx.annotation.OptIn
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Icon
@@ -15,7 +17,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,11 +50,25 @@ fun ControlsTopView(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         PlayerButton(onClick = onBackClick) {
-            Text(
-                text = "<",
-                color = Color.White,
-                style = MaterialTheme.typography.headlineSmall,
-            )
+            Canvas(modifier = Modifier.size(24.dp).padding(2.dp)) {
+                val stroke = 2.2.dp.toPx()
+                val startX = size.width * 0.62f
+                val endX = size.width * 0.36f
+                drawLine(
+                    color = Color.White,
+                    start = Offset(startX, size.height * 0.25f),
+                    end = Offset(endX, size.height * 0.5f),
+                    strokeWidth = stroke,
+                    cap = StrokeCap.Round,
+                )
+                drawLine(
+                    color = Color.White,
+                    start = Offset(endX, size.height * 0.5f),
+                    end = Offset(startX, size.height * 0.75f),
+                    strokeWidth = stroke,
+                    cap = StrokeCap.Round,
+                )
+            }
         }
         Text(
             text = title,

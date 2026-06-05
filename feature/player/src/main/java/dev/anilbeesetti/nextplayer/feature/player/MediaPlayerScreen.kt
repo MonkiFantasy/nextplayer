@@ -314,6 +314,12 @@ fun MediaPlayerScreen(
                                     },
                                     onPlayInBackgroundClick = onPlayInBackgroundClick,
                                 )
+                                BiliCenterRightLockButton(
+                                    onClick = {
+                                        controlsVisibilityState.showControls()
+                                        controlsVisibilityState.lockControls()
+                                    },
+                                )
                             }
                             if (controlsVisibilityState.controlsVisible && isPortrait) {
                                 BiliPortraitSideActions(
@@ -332,10 +338,6 @@ fun MediaPlayerScreen(
                                     onVideoScaleClick = {
                                         controlsVisibilityState.hideControls()
                                         overlayView = OverlayView.VIDEO_CONTENT_SCALE
-                                    },
-                                    onLockControlsClick = {
-                                        controlsVisibilityState.showControls()
-                                        controlsVisibilityState.lockControls()
                                     },
                                 )
                             }
@@ -543,21 +545,39 @@ fun BoxScope.BiliPortraitSideActions(
     onPlaylistClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
     onVideoScaleClick: () -> Unit,
-    onLockControlsClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .align(Alignment.CenterEnd)
-            .padding(end = 18.dp),
+            .padding(end = 18.dp, bottom = 76.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         BiliPortraitSideAction(label = "字幕", icon = coreUiR.drawable.ic_subtitle_track, onClick = onSubtitleClick)
         BiliPortraitSideAction(label = "选集", icon = coreUiR.drawable.ic_playlist, onClick = onPlaylistClick)
-        BiliPortraitSideAction(label = "锁定", icon = coreUiR.drawable.ic_lock_open, onClick = onLockControlsClick)
+    }
+    Column(
+        modifier = Modifier
+            .align(Alignment.CenterEnd)
+            .padding(end = 18.dp, top = 76.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
         BiliPortraitSideAction(label = "倍速", icon = coreUiR.drawable.ic_speed, onClick = onPlaybackSpeedClick)
         BiliPortraitSideAction(label = "缩放", icon = coreUiR.drawable.ic_width_wide, onClick = onVideoScaleClick)
     }
+}
+
+@Composable
+private fun BoxScope.BiliCenterRightLockButton(onClick: () -> Unit) {
+    BiliPortraitSideAction(
+        modifier = Modifier
+            .align(Alignment.CenterEnd)
+            .padding(end = 18.dp),
+        label = "锁定",
+        icon = coreUiR.drawable.ic_lock_open,
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -603,10 +623,11 @@ private fun BoxScope.BiliPortraitCornerActions(
     onPictureInPictureClick: (() -> Unit)?,
     onPlayInBackgroundClick: () -> Unit,
 ) {
+    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
     Row(
         modifier = Modifier
             .align(Alignment.TopEnd)
-            .padding(top = 64.dp, end = 16.dp),
+            .padding(top = systemBarsPadding.calculateTopPadding(), end = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -638,11 +659,13 @@ private fun BiliPortraitSmallAction(
 
 @Composable
 private fun BiliPortraitSideAction(
+    modifier: Modifier = Modifier,
     label: String,
     icon: Int,
     onClick: () -> Unit,
 ) {
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

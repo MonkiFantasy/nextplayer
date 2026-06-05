@@ -38,7 +38,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -267,7 +269,6 @@ private fun BiliActionRow(
         BiliTextAction(text = "倍速", onClick = onPlaybackSpeedClick)
         BiliTextAction(text = "缩放", onClick = onVideoContentScaleLongClick)
         BiliIconAction(onClick = onRotateClick, icon = R.drawable.ic_screen_rotation)
-        BiliIconAction(onClick = onLockControlsClick, icon = R.drawable.ic_lock_open)
     }
 }
 
@@ -302,12 +303,39 @@ private fun BiliFullscreenButton(onClick: () -> Unit) {
         modifier = Modifier.size(34.dp),
         onClick = onClick,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_fit_screen),
-            contentDescription = null,
-            modifier = Modifier.size(22.dp),
-            tint = Color.White,
-        )
+        Canvas(modifier = Modifier.size(20.dp)) {
+            val stroke = 2.dp.toPx()
+            val arm = 7.dp.toPx()
+            val pad = 3.dp.toPx()
+            drawLine(
+                Color.White,
+                Offset(pad, pad),
+                Offset(pad + arm, pad),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(pad, pad),
+                Offset(pad, pad + arm),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(size.width - pad, size.height - pad),
+                Offset(size.width - pad - arm, size.height - pad),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                Color.White,
+                Offset(size.width - pad, size.height - pad),
+                Offset(size.width - pad, size.height - pad - arm),
+                strokeWidth = stroke,
+                cap = StrokeCap.Round,
+            )
+        }
     }
 }
 
