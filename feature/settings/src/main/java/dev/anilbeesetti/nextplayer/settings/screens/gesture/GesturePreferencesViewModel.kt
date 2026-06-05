@@ -80,7 +80,7 @@ class GesturePreferencesViewModel @Inject constructor(
             preferencesRepository.updatePlayerPreferences {
                 it.copy(
                     doubleTapGesture = if (it.doubleTapGesture == DoubleTapGesture.NONE) {
-                        DoubleTapGesture.FAST_FORWARD_AND_REWIND
+                        DoubleTapGesture.PLAY_PAUSE
                     } else {
                         DoubleTapGesture.NONE
                     },

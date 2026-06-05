@@ -25,7 +25,7 @@ data class PlayerPreferences(
     val useSeekControls: Boolean = true,
     val useZoomControls: Boolean = true,
     val enablePanGesture: Boolean = false,
-    val doubleTapGesture: DoubleTapGesture = DoubleTapGesture.BOTH,
+    val doubleTapGesture: DoubleTapGesture = DoubleTapGesture.PLAY_PAUSE,
     val useLongPressControls: Boolean = true,
     val longPressControlsSpeed: Float = 2.0f,
     val seekIncrement: Int = DEFAULT_SEEK_INCREMENT,

@@ -1,6 +1,9 @@
 package dev.anilbeesetti.nextplayer.feature.player
 
 import android.content.res.Configuration
+import android.graphics.CornerPathEffect
+import android.graphics.Paint
+import android.graphics.Path as AndroidPath
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
@@ -50,7 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -99,6 +102,7 @@ import dev.anilbeesetti.nextplayer.feature.player.ui.VerticalProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsBottomView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsTopView
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 
 val LocalControlsVisibilityState = compositionLocalOf<ControlsVisibilityState?> { null }
@@ -243,7 +247,7 @@ fun MediaPlayerScreen(
 
                 AnimatedVisibility(
                     modifier = Modifier
-                        .padding(top = 24.dp)
+                        .padding(top = 18.dp)
                         .align(Alignment.TopCenter),
                     visible = tapGestureState.isLongPressGestureInAction,
                     enter = fadeIn(),
@@ -297,7 +301,7 @@ fun MediaPlayerScreen(
                                         controlsVisibilityState.hideControls()
                                         overlayView = OverlayView.PLAYLIST
                                     },
-                                    showActions = !isPortrait,
+                                    showActions = false,
                                     onBackClick = onBackClick,
                                 )
                             }
@@ -355,7 +359,7 @@ fun MediaPlayerScreen(
                                 videoZoomAndContentScaleState.showContentScaleIndicator -> InfoView(
                                     info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()),
                                 )
-                                controlsVisibilityState.controlsVisible && !mediaPresentationState.isPlaying -> BiliPauseCenterButton(
+                                controlsVisibilityState.controlsVisible && isPortrait && !mediaPresentationState.isPlaying -> BiliPauseCenterButton(
                                     player = player,
                                     timeText = "${mediaPresentationState.positionFormatted} / ${mediaPresentationState.durationFormatted}",
                                 )
@@ -637,17 +641,17 @@ fun BiliLongPressSpeedIndicator(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF4F5865).copy(alpha = 0.78f))
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .clip(RoundedCornerShape(7.dp))
+            .background(Color(0xFF4F5865).copy(alpha = 0.66f))
+            .padding(horizontal = 14.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         BiliAnimatedFastForwardTriangles()
         Text(
             text = text,
             color = Color.White,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium,
         )
     }
@@ -668,24 +672,29 @@ private fun BiliAnimatedFastForwardTriangles(modifier: Modifier = Modifier) {
 
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(1.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         repeat(3) { index ->
             val phase = ((progress.value * 3f) - index).floorMod(3f)
-            val alpha = (1f - (abs(phase - 1f) / 1f)).coerceIn(0.22f, 1f)
+            val alpha = (1f - (abs(phase - 1f) / 1f)).coerceIn(0.24f, 1f)
             Canvas(
                 modifier = Modifier
-                    .size(width = 18.dp, height = 22.dp)
-                    .blur(((1f - alpha) * 3f).dp),
+                    .size(width = 13.dp, height = 15.dp)
+                    .blur(((1f - alpha) * 2.2f).dp),
             ) {
-                val path = Path().apply {
+                val path = AndroidPath().apply {
                     moveTo(0f, 0f)
                     lineTo(size.width, size.height / 2f)
                     lineTo(0f, size.height)
                     close()
                 }
-                drawPath(path = path, color = Color.White.copy(alpha = alpha))
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = android.graphics.Color.argb((alpha * 255).roundToInt(), 255, 255, 255)
+                    style = Paint.Style.FILL
+                    pathEffect = CornerPathEffect(1.8.dp.toPx())
+                }
+                drawContext.canvas.nativeCanvas.drawPath(path, paint)
             }
         }
     }
