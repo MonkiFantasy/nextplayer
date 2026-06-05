@@ -166,6 +166,7 @@ private fun BiliLandscapeBottomControls(
     BiliPlayerSeekbar(
         position = mediaPresentationState.position.toFloat(),
         duration = mediaPresentationState.duration.toFloat(),
+        enabled = mediaPresentationState.duration > 0L && player.isCurrentMediaItemSeekable,
         onSeek = { onSeek(it.toLong()) },
         onSeekFinished = onSeekEnd,
     )
@@ -227,6 +228,7 @@ private fun BiliPortraitBottomControls(
     BiliPlayerSeekbar(
         position = mediaPresentationState.position.toFloat(),
         duration = mediaPresentationState.duration.toFloat(),
+        enabled = mediaPresentationState.duration > 0L && player.isCurrentMediaItemSeekable,
         onSeek = { onSeek(it.toLong()) },
         onSeekFinished = onSeekEnd,
         compact = true,
@@ -345,21 +347,33 @@ private fun BiliPlayerSeekbar(
     modifier: Modifier = Modifier,
     position: Float,
     duration: Float,
+    enabled: Boolean = duration > 0f,
     compact: Boolean = false,
     onSeek: (Float) -> Unit,
     onSeekFinished: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val trackHeight = if (compact) 2.4.dp else 3.dp
+    val safeDuration = duration.coerceAtLeast(0f)
+    val seekEnabled = enabled && safeDuration > 0f
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Slider(
             modifier = modifier
                 .fillMaxWidth()
                 .height(if (compact) 24.dp else 26.dp),
-            value = position.coerceIn(0f, duration.coerceAtLeast(0f)),
-            valueRange = 0f..duration.coerceAtLeast(1f),
-            onValueChange = onSeek,
-            onValueChangeFinished = onSeekFinished,
+            value = position.coerceIn(0f, safeDuration),
+            valueRange = 0f..safeDuration.coerceAtLeast(1f),
+            onValueChange = {
+                if (seekEnabled) {
+                    onSeek(it)
+                }
+            },
+            onValueChangeFinished = {
+                if (seekEnabled) {
+                    onSeekFinished()
+                }
+            },
+            enabled = seekEnabled,
             interactionSource = interactionSource,
             track = { sliderState ->
                 val min = sliderState.valueRange.start

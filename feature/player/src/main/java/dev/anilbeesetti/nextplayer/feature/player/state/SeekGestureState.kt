@@ -52,22 +52,25 @@ class SeekGestureState(
     private var seekStartX = 0f
 
     fun onSeek(value: Long) {
+        val duration = validSeekDurationOrNull() ?: run {
+            if (isSeeking) reset()
+            return
+        }
+
         if (!isSeeking) {
             isSeeking = true
-            seekStartPosition = player.currentPosition
+            seekStartPosition = player.currentPosition.coerceIn(0L, duration)
             player.setIsScrubbingModeEnabled(true)
         }
 
-        seekAmount = (value - seekStartPosition!!).coerceIn(
-            minimumValue = 0 - seekStartPosition!!,
-            maximumValue = player.duration - seekStartPosition!!,
+        val startPosition = seekStartPosition ?: player.currentPosition.coerceIn(0L, duration)
+        val targetPosition = value.coerceIn(0L, duration)
+        seekAmount = (targetPosition - startPosition).coerceIn(
+            minimumValue = 0L - startPosition,
+            maximumValue = duration - startPosition,
         )
 
-        if (value > player.currentPosition) {
-            player.seekTo(value.coerceAtMost(player.duration))
-        } else {
-            player.seekTo(value.coerceAtLeast(0L))
-        }
+        player.seekTo(targetPosition)
     }
 
     fun onSeekEnd() {
@@ -76,13 +79,11 @@ class SeekGestureState(
 
     fun onDragStart(offset: Offset) {
         if (!enableSeekGesture) return
-        if (player.currentPosition == C.TIME_UNSET) return
-        if (player.duration == C.TIME_UNSET) return
-        if (!player.isCurrentMediaItemSeekable) return
+        val duration = validSeekDurationOrNull() ?: return
 
         isSeeking = true
         seekStartX = offset.x
-        seekStartPosition = player.currentPosition
+        seekStartPosition = player.currentPosition.coerceIn(0L, duration)
 
         player.setIsScrubbingModeEnabled(true)
     }
@@ -90,19 +91,18 @@ class SeekGestureState(
     @OptIn(UnstableApi::class)
     fun onDrag(change: PointerInputChange, dragAmount: Float) {
         if (seekStartPosition == null) return
-        if (player.duration == C.TIME_UNSET) return
-        if (!player.isCurrentMediaItemSeekable) return
+        val duration = validSeekDurationOrNull() ?: return
         if (player.currentPosition <= 0L && dragAmount < 0) return
-        if (player.currentPosition >= player.duration && dragAmount > 0) return
+        if (player.currentPosition >= duration && dragAmount > 0) return
         if (change.isConsumed) return
 
         val newPosition = seekStartPosition!! + ((change.position.x - seekStartX) * (sensitivity * 100)).toInt()
         seekAmount = (newPosition - seekStartPosition!!).coerceIn(
             minimumValue = 0 - seekStartPosition!!,
-            maximumValue = player.duration - seekStartPosition!!,
+            maximumValue = duration - seekStartPosition!!,
         )
 
-        player.seekTo(newPosition.coerceIn(0L, player.duration))
+        player.seekTo(newPosition.coerceIn(0L, duration))
     }
 
     fun onDragEnd() {
@@ -116,6 +116,13 @@ class SeekGestureState(
         seekAmount = null
 
         seekStartX = 0f
+    }
+
+    private fun validSeekDurationOrNull(): Long? {
+        val duration = player.duration
+        return duration.takeIf {
+            it != C.TIME_UNSET && it > 0L && player.isCurrentMediaItemSeekable
+        }
     }
 }
 
