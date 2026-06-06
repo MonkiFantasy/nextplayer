@@ -36,7 +36,10 @@ fun PlayerGestures(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .pointerInput(pictureInPictureState.isInPictureInPictureMode) {
+                .pointerInput(
+                    pictureInPictureState.isInPictureInPictureMode,
+                    isPortrait,
+                ) {
                     if (pictureInPictureState.isInPictureInPictureMode) return@pointerInput
 
                     detectTapGestures(
