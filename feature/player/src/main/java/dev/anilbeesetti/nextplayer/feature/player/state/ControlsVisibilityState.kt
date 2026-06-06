@@ -55,6 +55,7 @@ class ControlsVisibilityState(
     private val scope: CoroutineScope,
 ) {
     private var autoHideControlsJob: Job? = null
+    private var autoHideEnabled: Boolean = true
 
     var controlsVisible: Boolean by mutableStateOf(true)
         private set
@@ -65,6 +66,16 @@ class ControlsVisibilityState(
     fun showControls(duration: Duration = hideAfter) {
         controlsVisible = true
         autoHideControls(duration)
+    }
+
+    fun setAutoHideEnabled(enabled: Boolean) {
+        if (autoHideEnabled == enabled) return
+        autoHideEnabled = enabled
+        if (!enabled) {
+            autoHideControlsJob?.cancel()
+        } else if (controlsVisible && player.isPlaying) {
+            autoHideControls()
+        }
     }
 
     fun hideControls() {
@@ -101,6 +112,7 @@ class ControlsVisibilityState(
 
     private fun autoHideControls(duration: Duration = hideAfter) {
         autoHideControlsJob?.cancel()
+        if (!autoHideEnabled) return
         autoHideControlsJob = scope.launch {
             delay(duration)
             if (player.isPlaying) {

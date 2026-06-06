@@ -148,6 +148,9 @@ fun MediaPlayerScreen(
         sensitivity = playerPreferences.seekSensitivity,
         enableSeekGesture = playerPreferences.useSeekControls,
     )
+    LaunchedEffect(seekGestureState.isSeeking) {
+        controlsVisibilityState.setAutoHideEnabled(!seekGestureState.isSeeking)
+    }
     val pictureInPictureState = rememberPictureInPictureState(
         player = player,
         autoEnter = playerPreferences.autoPip,
