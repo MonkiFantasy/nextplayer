@@ -60,7 +60,6 @@ class SeekGestureState(
         if (!isSeeking) {
             isSeeking = true
             seekStartPosition = player.currentPosition.coerceIn(0L, duration)
-            player.setIsScrubbingModeEnabled(true)
         }
 
         val startPosition = seekStartPosition ?: player.currentPosition.coerceIn(0L, duration)
@@ -82,8 +81,6 @@ class SeekGestureState(
         isSeeking = true
         seekStartX = offset.x
         seekStartPosition = player.currentPosition.coerceIn(0L, duration)
-
-        player.setIsScrubbingModeEnabled(true)
     }
 
     @OptIn(UnstableApi::class)
