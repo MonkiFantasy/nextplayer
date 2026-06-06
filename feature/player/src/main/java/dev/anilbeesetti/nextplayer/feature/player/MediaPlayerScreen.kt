@@ -46,6 +46,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -69,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.PlayerSurface
@@ -711,9 +713,10 @@ fun BiliSeekPreview(
 ) {
     val context = LocalContext.current
     val currentMediaItem = player.currentMediaItem
-    val previewPositionMs = (positionMs / 500L * 500L).coerceAtLeast(0L)
+    val previewPositionMs = (positionMs / 1000L * 1000L).coerceAtLeast(0L)
     val previewPlayer = remember(currentMediaItem?.mediaId) {
         ExoPlayer.Builder(context).build().apply {
+            setSeekParameters(SeekParameters.CLOSEST_SYNC)
             volume = 0f
             playWhenReady = false
             repeatMode = Player.REPEAT_MODE_OFF
@@ -721,11 +724,14 @@ fun BiliSeekPreview(
             prepare()
         }
     }
+    var lastRequestedPreviewPositionMs by remember(currentMediaItem?.mediaId) { mutableLongStateOf(Long.MIN_VALUE) }
     DisposableEffect(previewPlayer) {
         onDispose { previewPlayer.release() }
     }
     LaunchedEffect(previewPlayer, currentMediaItem?.mediaId, previewPositionMs) {
         val mediaItem = currentMediaItem ?: return@LaunchedEffect
+        if (lastRequestedPreviewPositionMs == previewPositionMs) return@LaunchedEffect
+        lastRequestedPreviewPositionMs = previewPositionMs
         if (previewPlayer.currentMediaItem?.mediaId != mediaItem.mediaId) {
             previewPlayer.setMediaItem(mediaItem)
             previewPlayer.prepare()

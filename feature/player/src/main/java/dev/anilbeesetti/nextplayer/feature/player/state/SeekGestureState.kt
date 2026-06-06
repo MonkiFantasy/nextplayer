@@ -90,23 +90,27 @@ class SeekGestureState(
 
     @OptIn(UnstableApi::class)
     fun onDrag(change: PointerInputChange, dragAmount: Float) {
-        if (seekStartPosition == null) return
+        val startPosition = seekStartPosition ?: return
         val duration = validSeekDurationOrNull() ?: return
-        if (player.currentPosition <= 0L && dragAmount < 0) return
-        if (player.currentPosition >= duration && dragAmount > 0) return
         if (change.isConsumed) return
 
-        val newPosition = seekStartPosition!! + ((change.position.x - seekStartX) * (sensitivity * 100)).toInt()
-        seekAmount = (newPosition - seekStartPosition!!).coerceIn(
-            minimumValue = 0 - seekStartPosition!!,
-            maximumValue = duration - seekStartPosition!!,
+        val newPosition = startPosition + ((change.position.x - seekStartX) * (sensitivity * 100)).toInt()
+        seekAmount = (newPosition - startPosition).coerceIn(
+            minimumValue = 0 - startPosition,
+            maximumValue = duration - startPosition,
         )
-
-        player.seekTo(newPosition.coerceIn(0L, duration))
     }
 
     fun onDragEnd() {
+        seekTargetPositionOrNull()?.let(player::seekTo)
         reset()
+    }
+
+    private fun seekTargetPositionOrNull(): Long? {
+        val duration = validSeekDurationOrNull() ?: return null
+        val startPosition = seekStartPosition ?: return null
+        val amount = seekAmount ?: return null
+        return (startPosition + amount).coerceIn(0L, duration)
     }
 
     private fun reset() {
