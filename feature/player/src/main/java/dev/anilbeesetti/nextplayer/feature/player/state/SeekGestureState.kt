@@ -69,12 +69,10 @@ class SeekGestureState(
             minimumValue = 0L - startPosition,
             maximumValue = duration - startPosition,
         )
-
-        player.seekTo(targetPosition)
     }
 
     fun onSeekEnd() {
-        reset()
+        commitSeekAndReset()
     }
 
     fun onDragStart(offset: Offset) {
@@ -102,6 +100,10 @@ class SeekGestureState(
     }
 
     fun onDragEnd() {
+        commitSeekAndReset()
+    }
+
+    private fun commitSeekAndReset() {
         seekTargetPositionOrNull()?.let(player::seekTo)
         reset()
     }
