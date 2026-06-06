@@ -277,6 +277,11 @@ fun MediaPlayerScreen(
                         onUnlockClick = { controlsVisibilityState.unlockControls() },
                     )
                 } else {
+                    val seekPreviewPositionMs = (
+                        (seekGestureState.seekStartPosition ?: 0L) +
+                            (seekGestureState.seekAmount ?: 0L)
+                    ).coerceIn(0L, mediaPresentationState.duration.coerceAtLeast(0L))
+
                     PlayerControlsView(
                         topView = {
                             AnimatedVisibility(
@@ -357,10 +362,6 @@ fun MediaPlayerScreen(
                                     },
                                 )
                             }
-                            val seekPreviewPositionMs = (
-                                (seekGestureState.seekStartPosition ?: 0L) +
-                                    (seekGestureState.seekAmount ?: 0L)
-                            ).coerceIn(0L, mediaPresentationState.duration.coerceAtLeast(0L))
                             when {
                                 seekGestureState.seekAmount != null -> BiliSeekPreview(
                                     modifier = if (isPortrait) {
@@ -399,6 +400,11 @@ fun MediaPlayerScreen(
                                 ControlsBottomView(
                                     player = player,
                                     mediaPresentationState = mediaPresentationState,
+                                    seekbarPosition = if (seekGestureState.seekAmount != null) {
+                                        seekPreviewPositionMs
+                                    } else {
+                                        mediaPresentationState.position
+                                    },
                                     title = metadataState.title ?: "",
                                     controlsAlignment = when (playerPreferences.controlButtonsPosition) {
                                         ControlButtonsPosition.LEFT -> Alignment.Start

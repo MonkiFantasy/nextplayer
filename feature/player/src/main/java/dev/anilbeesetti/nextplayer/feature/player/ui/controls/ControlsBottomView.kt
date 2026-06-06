@@ -68,6 +68,7 @@ fun ControlsBottomView(
     modifier: Modifier = Modifier,
     player: Player,
     mediaPresentationState: MediaPresentationState,
+    seekbarPosition: Long = mediaPresentationState.position,
     title: String,
     controlsAlignment: Alignment.Horizontal,
     videoContentScale: VideoContentScale,
@@ -99,6 +100,7 @@ fun ControlsBottomView(
             BiliPortraitBottomControls(
                 player = player,
                 mediaPresentationState = mediaPresentationState,
+                seekbarPosition = seekbarPosition,
                 title = title,
                 videoContentScale = videoContentScale,
                 isPipSupported = isPipSupported,
@@ -118,6 +120,7 @@ fun ControlsBottomView(
             BiliLandscapeBottomControls(
                 player = player,
                 mediaPresentationState = mediaPresentationState,
+                seekbarPosition = seekbarPosition,
                 controlsAlignment = controlsAlignment,
                 videoContentScale = videoContentScale,
                 isPipSupported = isPipSupported,
@@ -142,6 +145,7 @@ fun ControlsBottomView(
 private fun BiliLandscapeBottomControls(
     player: Player,
     mediaPresentationState: MediaPresentationState,
+    seekbarPosition: Long,
     controlsAlignment: Alignment.Horizontal,
     videoContentScale: VideoContentScale,
     isPipSupported: Boolean,
@@ -164,7 +168,7 @@ private fun BiliLandscapeBottomControls(
         fontWeight = FontWeight.Medium,
     )
     BiliPlayerSeekbar(
-        position = mediaPresentationState.position.toFloat(),
+        position = seekbarPosition.toFloat(),
         duration = mediaPresentationState.duration.toFloat(),
         enabled = mediaPresentationState.duration > 0L && player.isCurrentMediaItemSeekable,
         onSeek = { onSeek(it.toLong()) },
@@ -202,6 +206,7 @@ private fun BiliLandscapeBottomControls(
 private fun BiliPortraitBottomControls(
     player: Player,
     mediaPresentationState: MediaPresentationState,
+    seekbarPosition: Long,
     title: String,
     videoContentScale: VideoContentScale,
     isPipSupported: Boolean,
@@ -226,7 +231,7 @@ private fun BiliPortraitBottomControls(
         maxLines = 2,
     )
     BiliPlayerSeekbar(
-        position = mediaPresentationState.position.toFloat(),
+        position = seekbarPosition.toFloat(),
         duration = mediaPresentationState.duration.toFloat(),
         enabled = mediaPresentationState.duration > 0L && player.isCurrentMediaItemSeekable,
         onSeek = { onSeek(it.toLong()) },
