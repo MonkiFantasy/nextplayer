@@ -363,6 +363,13 @@ fun MediaPlayerScreen(
                             ).coerceIn(0L, mediaPresentationState.duration.coerceAtLeast(0L))
                             when {
                                 seekGestureState.seekAmount != null -> BiliSeekPreview(
+                                    modifier = if (isPortrait) {
+                                        Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .padding(bottom = 148.dp)
+                                    } else {
+                                        Modifier
+                                    },
                                     player = player,
                                     positionMs = seekPreviewPositionMs,
                                     position = seekGestureState.seekToPositionFormated,
