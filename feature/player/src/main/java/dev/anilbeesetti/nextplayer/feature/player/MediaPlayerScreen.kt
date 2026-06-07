@@ -101,12 +101,12 @@ import dev.anilbeesetti.nextplayer.feature.player.state.rememberVideoZoomAndCont
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberVolumeAndBrightnessGestureState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberVolumeState
 import dev.anilbeesetti.nextplayer.feature.player.state.seekToPositionFormated
+import dev.anilbeesetti.nextplayer.feature.player.ui.BiliBrightnessProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.BiliVolumeProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.DoubleTapIndicator
 import dev.anilbeesetti.nextplayer.feature.player.ui.OverlayShowView
 import dev.anilbeesetti.nextplayer.feature.player.ui.OverlayView
 import dev.anilbeesetti.nextplayer.feature.player.ui.SubtitleConfiguration
-import dev.anilbeesetti.nextplayer.feature.player.ui.VerticalProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsBottomView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsTopView
 import kotlin.math.abs
@@ -489,7 +489,7 @@ fun MediaPlayerScreen(
                         enter = fadeIn(),
                         exit = fadeOut(),
                     ) {
-                        VerticalProgressView(
+                        BiliBrightnessProgressView(
                             value = brightnessState.brightnessPercentage,
                             icon = painterResource(coreUiR.drawable.ic_brightness),
                         )
