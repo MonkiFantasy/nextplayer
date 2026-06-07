@@ -31,12 +31,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,8 +56,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -303,6 +305,8 @@ private fun BiliSubtitleSectionTitle(text: String) {
         modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp),
     )
 }
+
+@Composable
 private fun DelayInput(
     value: Long,
     onValueChange: (Long) -> Unit,
@@ -320,7 +324,7 @@ private fun DelayInput(
     NumberChooserInput(
         title = stringResource(R.string.delay),
         value = valueString,
-        suffix = { Text(text = "sec") },
+        suffix = "sec",
         onValueChange = { newValue ->
             if (newValue.isBlank()) {
                 valueString = ""
@@ -371,7 +375,7 @@ private fun SpeedInput(
     NumberChooserInput(
         title = stringResource(R.string.speed),
         value = valueString,
-        suffix = { Text(text = "x") },
+        suffix = "x",
         onValueChange = { newValue ->
             if (newValue.isBlank()) {
                 valueString = ""
@@ -411,42 +415,80 @@ private fun NumberChooserInput(
     onValueChange: (String) -> Unit,
     onIncrement: () -> Unit = {},
     onDecrement: () -> Unit = {},
-    suffix: @Composable (() -> Unit)? = null,
+    suffix: String,
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(46.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.White.copy(alpha = 0.06f))
+            .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        FilledTonalIconButton(
-            onClick = { },
-            modifier = Modifier.repeatingClickable(onClick = onDecrement),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_remove),
-                contentDescription = null,
-            )
-        }
-        OutlinedTextField(
-            label = { Text(text = title) },
+        Text(
+            text = title,
+            color = Color.White.copy(alpha = 0.78f),
+            fontSize = 13.sp,
+            modifier = Modifier.width(44.dp),
+        )
+        BiliSubtitleRoundButton(icon = R.drawable.ic_remove, onClick = onDecrement)
+        BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.weight(1f),
-            suffix = suffix,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Decimal,
+            modifier = Modifier
+                .weight(1f)
+                .height(30.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.18f))
+                .padding(horizontal = 8.dp),
+            textStyle = TextStyle(
+                color = Color.White,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
             ),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            decorationBox = { innerTextField ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        innerTextField()
+                    }
+                    Text(
+                        text = suffix,
+                        color = Color.White.copy(alpha = 0.50f),
+                        fontSize = 12.sp,
+                    )
+                }
+            },
         )
-        FilledTonalIconButton(
-            onClick = { },
-            modifier = Modifier.repeatingClickable(onClick = onIncrement),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_add),
-                contentDescription = null,
-            )
-        }
+        BiliSubtitleRoundButton(icon = R.drawable.ic_add, onClick = onIncrement)
+    }
+}
+
+@Composable
+private fun BiliSubtitleRoundButton(
+    icon: Int,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(30.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.10f))
+            .repeatingClickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.86f),
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
