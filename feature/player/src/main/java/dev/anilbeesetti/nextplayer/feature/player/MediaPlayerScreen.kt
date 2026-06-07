@@ -101,6 +101,7 @@ import dev.anilbeesetti.nextplayer.feature.player.state.rememberVideoZoomAndCont
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberVolumeAndBrightnessGestureState
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberVolumeState
 import dev.anilbeesetti.nextplayer.feature.player.state.seekToPositionFormated
+import dev.anilbeesetti.nextplayer.feature.player.ui.BiliVolumeProgressView
 import dev.anilbeesetti.nextplayer.feature.player.ui.DoubleTapIndicator
 import dev.anilbeesetti.nextplayer.feature.player.ui.OverlayShowView
 import dev.anilbeesetti.nextplayer.feature.player.ui.OverlayView
@@ -475,7 +476,7 @@ fun MediaPlayerScreen(
                         enter = fadeIn(),
                         exit = fadeOut(),
                     ) {
-                        VerticalProgressView(
+                        BiliVolumeProgressView(
                             value = volumeState.volumePercentage,
                             maxValue = volumeState.maxVolumePercentage,
                             icon = painterResource(coreUiR.drawable.ic_volume),
