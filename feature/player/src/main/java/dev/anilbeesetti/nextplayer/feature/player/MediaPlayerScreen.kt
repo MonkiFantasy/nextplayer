@@ -72,6 +72,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
@@ -181,6 +182,39 @@ fun MediaPlayerScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    val previewMediaItem = player.currentMediaItem
+    val seekPreviewPlayer = remember {
+        ExoPlayer.Builder(context)
+            .setLoadControl(
+                DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        500,
+                        1_500,
+                        250,
+                        250,
+                    )
+                    .build(),
+            )
+            .build()
+            .apply {
+                setSeekParameters(SeekParameters.CLOSEST_SYNC)
+                volume = 0f
+                playWhenReady = false
+                repeatMode = Player.REPEAT_MODE_OFF
+            }
+    }
+    DisposableEffect(seekPreviewPlayer) {
+        onDispose { seekPreviewPlayer.release() }
+    }
+    LaunchedEffect(seekPreviewPlayer, previewMediaItem?.mediaId) {
+        if (previewMediaItem == null) {
+            seekPreviewPlayer.clearMediaItems()
+            return@LaunchedEffect
+        }
+        seekPreviewPlayer.setMediaItem(previewMediaItem)
+        seekPreviewPlayer.prepare()
+        seekPreviewPlayer.pause()
+    }
 
     LaunchedEffect(pictureInPictureState.isInPictureInPictureMode) {
         if (pictureInPictureState.isInPictureInPictureMode) {
@@ -375,7 +409,8 @@ fun MediaPlayerScreen(
                                     } else {
                                         Modifier
                                     },
-                                    player = player,
+                                    previewPlayer = seekPreviewPlayer,
+                                    previewMediaKey = previewMediaItem?.mediaId,
                                     positionMs = seekPreviewPositionMs,
                                     position = seekGestureState.seekToPositionFormated,
                                     duration = mediaPresentationState.durationFormatted,
@@ -723,36 +758,18 @@ private fun BiliPortraitSideAction(
 @Composable
 fun BiliSeekPreview(
     modifier: Modifier = Modifier,
-    player: Player,
+    previewPlayer: Player,
+    previewMediaKey: String?,
     positionMs: Long,
     position: String,
     duration: String,
 ) {
-    val context = LocalContext.current
-    val currentMediaItem = player.currentMediaItem
     val previewPositionMs = (positionMs / 1000L * 1000L).coerceAtLeast(0L)
-    val previewPlayer = remember(currentMediaItem?.mediaId) {
-        ExoPlayer.Builder(context).build().apply {
-            setSeekParameters(SeekParameters.CLOSEST_SYNC)
-            volume = 0f
-            playWhenReady = false
-            repeatMode = Player.REPEAT_MODE_OFF
-            currentMediaItem?.let(::setMediaItem)
-            prepare()
-        }
-    }
-    var lastRequestedPreviewPositionMs by remember(currentMediaItem?.mediaId) { mutableLongStateOf(Long.MIN_VALUE) }
-    DisposableEffect(previewPlayer) {
-        onDispose { previewPlayer.release() }
-    }
-    LaunchedEffect(previewPlayer, currentMediaItem?.mediaId, previewPositionMs) {
-        val mediaItem = currentMediaItem ?: return@LaunchedEffect
+    var lastRequestedPreviewPositionMs by remember(previewMediaKey) { mutableLongStateOf(Long.MIN_VALUE) }
+    LaunchedEffect(previewPlayer, previewMediaKey, previewPositionMs) {
+        if (previewMediaKey == null) return@LaunchedEffect
         if (lastRequestedPreviewPositionMs == previewPositionMs) return@LaunchedEffect
         lastRequestedPreviewPositionMs = previewPositionMs
-        if (previewPlayer.currentMediaItem?.mediaId != mediaItem.mediaId) {
-            previewPlayer.setMediaItem(mediaItem)
-            previewPlayer.prepare()
-        }
         previewPlayer.pause()
         previewPlayer.seekTo(previewPositionMs)
     }
@@ -771,7 +788,7 @@ fun BiliSeekPreview(
                 .border(1.2.dp, Color.White.copy(alpha = 0.96f), previewShape),
             contentAlignment = Alignment.Center,
         ) {
-            currentMediaItem?.let {
+            if (previewMediaKey != null) {
                 PlayerSurface(
                     player = previewPlayer,
                     surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
