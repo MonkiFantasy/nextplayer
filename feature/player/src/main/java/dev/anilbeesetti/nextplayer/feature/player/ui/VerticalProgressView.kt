@@ -19,7 +19,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +29,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.anilbeesetti.nextplayer.core.ui.R
 import dev.anilbeesetti.nextplayer.core.ui.theme.NextPlayerTheme
 
@@ -121,42 +119,37 @@ fun BiliVolumeProgressView(
 
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.Black.copy(alpha = 0.62f))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .width(226.dp)
+            .height(72.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.42f))
+            .padding(horizontal = 25.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Icon(
             painter = icon,
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = Color.White.copy(alpha = 0.92f),
+            modifier = Modifier.size(38.dp),
+            tint = Color.White.copy(alpha = 0.96f),
         )
 
         Box(
             modifier = Modifier
-                .width(96.dp)
-                .height(5.dp)
+                .width(118.dp)
+                .height(4.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color.White.copy(alpha = 0.24f)),
+                .background(Color.White.copy(alpha = 0.23f)),
             contentAlignment = Alignment.CenterStart,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fillFraction)
-                    .height(5.dp)
+                    .height(4.dp)
                     .clip(RoundedCornerShape(50))
                     .background(activeColor),
             )
         }
-
-        Text(
-            text = normalizedValue.toString(),
-            color = Color.White.copy(alpha = 0.94f),
-            fontSize = 13.sp,
-            style = MaterialTheme.typography.labelMedium,
-        )
     }
 }
 
@@ -172,42 +165,37 @@ fun BiliBrightnessProgressView(
 
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.Black.copy(alpha = 0.62f))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .width(226.dp)
+            .height(72.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.42f))
+            .padding(horizontal = 25.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Icon(
             painter = icon,
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = Color.White.copy(alpha = 0.92f),
+            modifier = Modifier.size(38.dp),
+            tint = Color.White.copy(alpha = 0.96f),
         )
 
         Box(
             modifier = Modifier
-                .width(96.dp)
-                .height(5.dp)
+                .width(118.dp)
+                .height(4.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Color.White.copy(alpha = 0.24f)),
+                .background(Color.White.copy(alpha = 0.23f)),
             contentAlignment = Alignment.CenterStart,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fillFraction)
-                    .height(5.dp)
+                    .height(4.dp)
                     .clip(RoundedCornerShape(50))
                     .background(Color(0xFFFB7299)),
             )
         }
-
-        Text(
-            text = "$normalizedValue%",
-            color = Color.White.copy(alpha = 0.94f),
-            fontSize = 13.sp,
-            style = MaterialTheme.typography.labelMedium,
-        )
     }
 }
 

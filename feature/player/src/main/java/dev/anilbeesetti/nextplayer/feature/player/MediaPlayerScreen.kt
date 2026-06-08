@@ -471,7 +471,7 @@ fun MediaPlayerScreen(
                         .padding(24.dp),
                 ) {
                     AnimatedVisibility(
-                        modifier = Modifier.align(Alignment.CenterStart),
+                        modifier = Modifier.align(Alignment.Center),
                         visible = volumeAndBrightnessGestureState.activeGesture == VerticalGesture.VOLUME,
                         enter = fadeIn(),
                         exit = fadeOut(),
@@ -484,7 +484,7 @@ fun MediaPlayerScreen(
                     }
 
                     AnimatedVisibility(
-                        modifier = Modifier.align(Alignment.CenterEnd),
+                        modifier = Modifier.align(Alignment.Center),
                         visible = volumeAndBrightnessGestureState.activeGesture == VerticalGesture.BRIGHTNESS,
                         enter = fadeIn(),
                         exit = fadeOut(),
